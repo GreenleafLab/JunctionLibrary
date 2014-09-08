@@ -9,7 +9,7 @@
 import numpy as np
 from hjh.helix import Helix
 from hjh.junction import Junction
-from Bio.Seq import Seq
+from hjh.seqfun import reverseComplement
 import subprocess
 
 def threadTogether(base, receptor, helix, junction, loop):
@@ -24,7 +24,7 @@ def threadTogether(base, receptor, helix, junction, loop):
     """
     
     seq = (base + receptor[0] + helix[0] + junction[0] + helix[1] + loop +
-                                helix[2] + junction[1] + helix[3] + receptor[1] +str(Seq(base).reverse_complement()))
+                                helix[2] + junction[1] + helix[3] + receptor[1] + reverseComplement(base))
     return seq
 
 def countSequences(junctionSequences, helixSequences, receptor,  loop, base):
