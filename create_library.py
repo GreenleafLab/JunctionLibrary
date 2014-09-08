@@ -12,19 +12,15 @@ from hjh.junction import Junction
 from hjh.seqfun import reverseComplement
 import subprocess
 
-def threadTogether(base, receptor, helix, junction, loop):
+def threadTogether(inside, outside):
     """
-    Given a receptor, h1, junction, h2, and loop, this will thread them
-    together into a single string.
+    Given a sequence 'inside' and a tuple 'outside' ('side1', 'side2'),
+    add  the sequences from 'outside' to either side of 'inside'.
     
-    Each is a tuple, first entry is the side1 sequence, second is the side 2 sequence
-    
-    receptor(side 1) + h1(side 1) + junction(side 1) +
-        h2(side 1) + loop + h2(side2) + junction(side2) + h1(side 2) + receptor(side 2)
+    outside(side 1) + inside + outside(side 2)
     """
     
-    seq = (base + receptor[0] + helix[0] + junction[0] + helix[1] + loop +
-                                helix[2] + junction[1] + helix[3] + receptor[1] + reverseComplement(base))
+    seq = (outside[0] + inside + outside[1])
     return seq
 
 def countSequences(junctionSequences, helixSequences, receptor,  loop, base):
@@ -48,11 +44,7 @@ def saveSequences(junctionSequences, helixSequences, receptor,  loop, base, f):
             name = 'junction:%s rigid:%d_%d'%('_'.join(junctionSequence),
                                                     len(helixSequence[0]),
                                                     len(helixSequence[1]))
-            sequence = threadTogether(base,
-                                      receptor,
-                                      helixSequence,
-                                      junctionSequence,
-                                      loop)
+            sequence = threadTogether(inside=loop, outside=(helixSequence[1], helixSequence[2]))
             
             # call RNAFold (vienna package) to get dot bracket notation
             structure = subprocess.check_output('echo '+sequence+' | RNAFold --noPS', shell=True).split('\n')[1].split(' (')
@@ -97,9 +89,11 @@ if __name__ == '__main__':
         junction = Junction(junctionMotif)
         helices = Helix(helixDict[helixName], junction.length).alongHelix()
         f, count = saveSequences(junction.sequences,
-                             helices,
-                             receptorDict[receptorName],
-                             loopDict[loopName], base, f)
+                                helices,
+                                receptorDict[receptorName],
+                                loopDict[loopName],
+                                base,
+                                f)
         countAll.append(count)
     f.close()
         
