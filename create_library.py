@@ -39,27 +39,49 @@ def countSequences(junctionSequences, helixSequences, receptor,  loop, base):
 def saveSequences(junctionSequences, helixSequences, receptor,  loop, base, f):
     # f = open fileID. Save the possible sequences
     count = 0
-    for junctionSequence in junctionSequences:
-        for helixSequence in helixSequences:
-            name = 'junction:%s rigid:%d_%d'%('_'.join(junctionSequence),
-                                                    len(helixSequence[0]),
-                                                    len(helixSequence[1]))
-            sequence = threadTogether(inside=loop, outside=(helixSequence[1], helixSequence[2]))
+
+    # for every junction sequence included by 'junctionMotif'
+    for junctionSequence in junction.sequences:
+        
+        # for every helix orientation/sequence given by 'helices'
+        for helixSequence in helices:
             
+            # give a name to each junction/helix orientation
+            name = 'junction:%s rigid:%d_%d'%('_'.join(junctionSequence),
+                                            len(helixSequence['h1_side1']),
+                                            len(helixSequence['h2_side1']))
+            
+            # find the list of tuples that are added to either side of a central region to
+            # obtain the final sequence.
+            sequenceList = [(helixSequence['h2_side1'], helixSequence['h2_side2']),
+                            (junctionSequence['side1'], junctionSequence['side2']),
+                            (helixSequence['h1_side1'], helixSequence['h1_side2']),
+                            (receptor[0], receptor[1]),
+                            (base[0], base[1])]
+            
+            # starting with the loop, progressively add each tuple in sequence list to either side
+            sequence = loop
+            for outside in sequenceList:
+                sequence = threadTogether(sequence, outside)
+                    
             # call RNAFold (vienna package) to get dot bracket notation
             structure = subprocess.check_output('echo '+sequence+' | RNAFold --noPS', shell=True).split('\n')[1].split(' (')
             dotbracket = structure[0]
             energy = float(structure[1].strip('()'))
+            
+            # save to open file
             f.write('%s\t%s\t%4.2f\t%s\n'%(name, sequence, energy, dotbracket))
-            count += 1           
+            count += 1
+            
     return f, count
 
 if __name__ == '__main__':
     
     helixDict      = {'rigid':('AAGATCCTGG', 'CTGGGATCTT')}
-    base           =  'CTAGGA'
+    base           =  ('CTAGGA', 'TCCTAG')
     loopDict       = {'GGAA':'GGAA'}
     receptorDict   = {'R1':('TATGG', 'CCTAAG')}
+
     
     # 2) Along Helix
     
@@ -88,6 +110,8 @@ if __name__ == '__main__':
     for junctionMotif in junctionMotifs:
         junction = Junction(junctionMotif)
         helices = Helix(helixDict[helixName], junction.length).alongHelix()
+        
+
         f, count = saveSequences(junction.sequences,
                                 helices,
                                 receptorDict[receptorName],
