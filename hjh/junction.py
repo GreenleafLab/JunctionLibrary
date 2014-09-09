@@ -8,7 +8,6 @@
 ##### IMPORT #####
 import numpy as np
 import itertools
-from Bio.Seq import Seq
 
 ##### Define CLASSES #####
 

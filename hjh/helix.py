@@ -7,7 +7,6 @@
 
 ##### IMPORT #####
 import numpy as np
-from Bio.Seq import Seq
 
 class Helix(object):
     def __init__(self, helixSequence, junctionLength):
