@@ -110,8 +110,6 @@ if __name__ == '__main__':
     for junctionMotif in junctionMotifs:
         junction = Junction(junctionMotif)
         helices = Helix(helixDict[helixName], junction.length).alongHelix()
-        
-
         f, count = saveSequences(junction.sequences,
                                 helices,
                                 receptorDict[receptorName],
