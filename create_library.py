@@ -77,6 +77,8 @@ def saveSequences(junctionSequences, helixSequences, receptor,  loop, base, f):
 
 if __name__ == '__main__':
     
+    print 'hello'
+    
     helixDict      = {'rigid':('AAGATCCTGG', 'CTGGGATCTT')}
     base           =  ('CTAGGA', 'TCCTAG')
     loopDict       = {'GGAA':'GGAA'}
