@@ -34,34 +34,46 @@ def countSequences(junctionSequences, helixSequences, receptor,  loop, base):
                                       junctionSequence,
                                       loopDict[loopName])
             count += 1           
-    return count  
+    return count
+
+def twoWayJunctionOrder(helixSequence, junctionSequence, receptor, base, sequencingAdapters):
+    """
+    for a single two-way junction (one entry each side) and single helix breakpoint
+    (two entries each side), this is the way to thread together, adjoining each entry to either
+    side of central point (i.e. loop)
+    """
+    sequenceList = [(helixSequence['h2_side1'], helixSequence['h2_side2']),
+                    (junctionSequence['side1'], junctionSequence['side2']),
+                    (helixSequence['h1_side1'], helixSequence['h1_side2']),
+                    (receptor[0], receptor[1]),
+                    (base[0], base[1]),
+                    (sequencingAdapters[0], sequencingAdapters[1])]
+    return sequenceList
     
-def saveSequences(junctionSequences, helixSequences, receptor,  loop, base, f):
+def saveSequences(names, junctionSequences, helixSequences, receptor,  loop, base, sequencingAdapters, f):
     # f = open fileID. Save the possible sequences
     count = 0
 
     # for every junction sequence included by 'junctionMotif'
-    for junctionSequence in junction.sequences:
+    for junctionSequence in junctionSequences:
         
         # for every helix orientation/sequence given by 'helices'
-        for helixSequence in helices:
+        for helixSequence in helixSequences:
             
             # give a name to each junction/helix orientation
-            name = 'junction:%s rigid:%d_%d'%('_'.join(junctionSequence),
+            name = '%s.%s.%d_%d'%('.'.join(names),
+                                  '_'.join(junctionSequence),
                                             len(helixSequence['h1_side1']),
                                             len(helixSequence['h2_side1']))
             
             # find the list of tuples that are added to either side of a central region to
             # obtain the final sequence.
-            sequenceList = [(helixSequence['h2_side1'], helixSequence['h2_side2']),
-                            (junctionSequence['side1'], junctionSequence['side2']),
-                            (helixSequence['h1_side1'], helixSequence['h1_side2']),
-                            (receptor[0], receptor[1]),
-                            (base[0], base[1])]
+            sequenceList = twoWayJunctionOrder(helixSequence, junctionSequence, receptor, base, sequencingAdapters)
             
             # starting with the loop, progressively add each tuple in sequence list to either side
+            # only add up to tecto Base before assessing structure
             sequence = loop
-            for outside in sequenceList:
+            for outside in sequenceList[:-1]:
                 sequence = threadTogether(sequence, outside)
                     
             # call RNAFold (vienna package) to get dot bracket notation
@@ -69,16 +81,22 @@ def saveSequences(junctionSequences, helixSequences, receptor,  loop, base, f):
             dotbracket = structure[0]
             energy = float(structure[1].strip('()'))
             
+            # now add sequencing adapters
+            sequence = threadTogether(sequence, sequenceList[-1])
+            
             # save to open file
-            f.write('%s\t%s\t%4.2f\t%s\n'%(name, sequence, energy, dotbracket))
+            f.write('%s\t%s\t%d\t%4.2f\t%s\n'%(name, sequence, len(sequence), energy, dotbracket))
             count += 1
             
     return f, count
 
 if __name__ == '__main__':
     
-    print 'hello'
+    """
+    Example run shown below. Actual functionality should come from different file, i.e.
+    'threeBythree.py' that call global parameters for the helix and loop sequences. 
     
+    """
     helixDict      = {'rigid':('AAGATCCTGG', 'CTGGGATCTT')}
     base           =  ('CTAGGA', 'TCCTAG')
     loopDict       = {'GGAA':'GGAA'}
@@ -120,71 +138,5 @@ if __name__ == '__main__':
                                 f)
         countAll.append(count)
     f.close()
-        
-    # 3) Alternate Helix sequence
-    # AU rich vs GC rich
-    # same AU-GC, 5 others
-    # change everything but GU + tandem mismatches there.
-    # 
-    
-    # next step: change receptors
-    # program in specific sequences of junctions (i.e. kink turns)
-    # allow changing helix content
-    
-#def saveSequences(junctionMotifs, helixContext, helixDict, receptorDict,  loopDict, base):
-#    
-#    for loopName in loopDict.keys():
-#        for receptorName in receptorDict.keys():
-#            for helixName in helixDict.keys():
-#                # initialize file saving
-#                fileName = [helixName,
-#                            helixContext,
-#                            '_'.join([''.join(result) for result in junctionMotifs]),
-#                            loopName,
-#                            receptorName]
-#                f = open('.'.join(fileName)+'.txt', 'w')
-#                
-#                # also Count the number of motifs
-#                count = 0 
-#                
-#                # cycle through junction Motifs
-#                for motif in junctionMotifs:
-#                    
-#                    # for each of the junction motifs, find all possible junction sequences
-#                    junction = Junction(motif)
-#                    
-#                    # given the topology of the junction (i.e. length), what is the
-#                    # surrounding sequence?
-#                    if helixContext == 'central':
-#                        helices = Helix(helixDict[helixName], junction.length).centralRegion()
-#                    elif helixContext == 'default':
-#                        helices = Helix(helixDict[helixName], junction.length).defaultLocation()
-#                    elif helixContext == 'along':
-#                        helices = Helix(helixDict[helixName], junction.length).alongHelix()
-#                    elif helixContext == 'doubledouble':
-#                        helices = Helix(helixDict[helixName], junction.length).doubleDouble()
-#                    else:
-#                        print "Error: check preference for helix context.\nEither 'central', 'default', 'along', or 'doubledouble'"
-#            
-#                    # for each junction sequence and helix sequence, print line
-#                    for junctionSequence in junction.sequences:
-#                        for helix in helices:
-#                            name = 'junction:%s rigid:%d_%d'%('_'.join(junctionSequence),
-#                                                            len(helix[0]),
-#                                                            len(helix[1]))
-#                            sequence = threadTogether(base,
-#                                                      receptorDict[receptorName],
-#                                                      helix,
-#                                                      junctionSequence,
-#                                                      loopDict[loopName])
-#                            structure = subprocess.check_output('echo '+sequence+' | RNAFold --noPS', shell=True).split('\n')[1].split(' (')
-#                            dotbracket = structure[0]
-#                            energy = float(structure[1].strip('()'))
-#                            f.write('%s\t%s\t%4.2f\t%s\n'%(name, sequence, energy, dotbracket))
-#                            count += 1
-#                f.close()            
-#    return count   
-                
-        
-        
+   
     
