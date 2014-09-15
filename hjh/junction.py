@@ -31,7 +31,7 @@ class Junction(object):
             print 'Check input: junction is not in tuple format.\n\tex: (\'M\',) or (\'B1\', \'B1\')\n'
             isJunctionGood = False
         for submotif in motif:
-            if submotif == 'M' or submotif == 'B1' or submotif == 'B2' or submotif == 'W':
+            if submotif == 'M' or submotif == 'B1' or submotif == 'B2' or submotif == 'W' or submotif == '':
                 pass
             else:
                 print('%s\n%s\n%s\n%s')%('Improperly formatted junction subMotif. Proper notation is:',
@@ -69,16 +69,24 @@ class Junction(object):
             possibleBases = np.array(np.empty(numberOfPossibilities),
                                     dtype={'names':('side1', 'side2'), 'formats':('S1','S1')})
             possibleBases['side1'] = ['A', 'T', 'G', 'C']
-            possibleBases['side2'] = ['']*4
+            possibleBases['side2'] = ['']*numberOfPossibilities
             
         elif submotif == 'B2':
             # if bulge on side 2, side 2 is every base, opposite a blank 
             numberOfPossibilities = 4
             possibleBases = np.array(np.empty(numberOfPossibilities),
                                     dtype={'names':('side1', 'side2'), 'formats':('S1','S1')})
-            possibleBases['side1'] = ['']*4
+            possibleBases['side1'] = ['']*numberOfPossibilities
             possibleBases['side2'] = ['A', 'T', 'G', 'C']
-
+        
+        elif submotif == '':
+            # if no junction, i.e. for straight 'rigid'
+            numberOfPossibilities = 1
+            possibleBases = np.array(np.empty(numberOfPossibilities),
+                                    dtype={'names':('side1', 'side2'), 'formats':('S1','S1')})
+            possibleBases['side1'] = ['']*numberOfPossibilities
+            possibleBases['side2'] = ['']*numberOfPossibilities
+            
         return possibleBases
     
     def howManyPossibilities(self):
