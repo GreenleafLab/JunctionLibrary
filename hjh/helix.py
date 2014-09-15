@@ -87,7 +87,8 @@ class Helix(object):
         
     def defaultLocation(self):
         """
-        Return helix 1 and 2 when junciton is placed in the middle
+        Return helix 1 and 2 when junciton is placed in the middle.
+        If helix length is odd, returns two helices with different offsets
         """
         sequence = self.sequence
         helixLength = self.effectiveLength
@@ -103,14 +104,15 @@ class Helix(object):
 
         return self.formatHelices(totalLengths, helixOneLengths)
     
-    def noJunctionLocation(self):
+    def centerLocation(self):
         """
-        Return helix 1 and 2 when junction is placed in the middle
+        Return helix 1 and 2 when junction is placed in the middle.
+        Returns only one helix, with helix one longer by one bp if necessary
         """
         sequence = self.sequence
         helixLength = self.effectiveLength
 
-        return self.formatHelices([helixLength], [0])
+        return self.formatHelices([helixLength], [int(np.ceil(helixLength*0.5))])
     
     def centralRegion(self):
         """
