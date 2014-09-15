@@ -18,19 +18,21 @@ class Parameters():
         # tecto RNA parameters
         self.helixDict = {'rigid':  ('AAGATCCTGG', 'CTGGGATCTT'),
                           'wc':     ('AAGATCCTCG', 'CGAGGATCTT'),
-                          'h3':     ('', ''),
-                          'h4':     ('', ''),
-                          'h5':     ('', ''),
-                          'h6':     ('', ''),
-                          'h7':     ('', ''),
-                          'h8':     ('', ''),
-                          'h9':     ('', ''),
-                          'h10':    ('', ''),
+                          'h01':    ('AAAAAAAAAA', 'TTTTTTTTTT'),
+                          'h02':    ('AAAAAAAAAA', 'TTTTTTTTTT'),
+                          'h03':    ('AAAAAAAAAA', 'TTTTTTTTTT'),
+                          'h04':    ('AAAAAAAAAA', 'TTTTTTTTTT'),
+                          'h05':    ('AAAAAAAAAA', 'TTTTTTTTTT'),
+                          'h06':    ('AAAAAAAAAA', 'TTTTTTTTTT'),
+                          'h07':    ('AAAAAAAAAA', 'TTTTTTTTTT'),
+                          'h08':    ('AAAAAAAAAA', 'TTTTTTTTTT'),
+
         }
+        self.allHelixNames = np.sort(self.helixDict.keys())
         
         
-        self.loopDict = {'GGAA': 'GGAA',
-                         'GAAA': 'GAAA'}
+        self.loopDict = {'goodLoop': 'GGAA',
+                         'badLoop': 'GAAA'}
         self.receptorDict   = ({'R1':('TATGG', 'CCTAAG'),
                                 'KL1': ('', ''),
                                 'KL2': ('', ''),
@@ -41,6 +43,18 @@ class Parameters():
                                     })
 
         self.tectoBase = ('CTAGGA', 'TCCTAG')
+        
+        self.allJunctions = [('',),('M',), ('M', 'M'), ('B1',), ('B2',), ('W',),
+                            ('M','M','M'),
+                            ('B1', 'B1'), ('B1', 'B1', 'B1'), ('B2', 'B2'), ('B2', 'B2', 'B2'),
+                            ('M',  'B1', 'B1'), ('M',  'B1'), ('M',  'M', 'B1'),
+                            ('B2', 'M',  'M' ), ('B2', 'M' ), ('B2', 'B2', 'M')]
+        
+        self.alongJunctions = [('M',), ('M', 'M'), ('B1',), ('B2',), ('W',)]
+        self.centralJunctions =    [('M','M','M'),
+                                    ('B1', 'B1'), ('B1', 'B1', 'B1'), ('B2', 'B2'), ('B2', 'B2', 'B2'),
+                                    ('M',  'B1', 'B1'), ('M',  'B1'), ('M',  'M', 'B1'),
+                                    ('B2', 'M',  'M' ), ('B2', 'M' ), ('B2', 'B2', 'M')]
         
         # sequencing library parameters
         self.sequencingAdapters = ('TTGTATGGAAGACGTTCCTGGATCC', 'AGATCGGAAGAGCGGTTCAGC')
