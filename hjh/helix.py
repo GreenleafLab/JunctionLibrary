@@ -103,6 +103,15 @@ class Helix(object):
 
         return self.formatHelices(totalLengths, helixOneLengths)
     
+    def noJunctionLocation(self):
+        """
+        Return helix 1 and 2 when junction is placed in the middle
+        """
+        sequence = self.sequence
+        helixLength = self.effectiveLength
+
+        return self.formatHelices([helixLength], [0])
+    
     def centralRegion(self):
         """
         Return all possible helix 1 and 2 given the junction length

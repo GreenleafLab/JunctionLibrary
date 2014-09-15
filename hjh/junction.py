@@ -113,6 +113,9 @@ class Junction(object):
         side1 = ['']
         side2 = ['']
         for submotif in motif:
+            """
+            given possibile nucleotides for each junction side, what are all possible permutations of nucleotides?
+            """
             possibleBases = self.mapSubmotifToNucleotide(submotif)
             side1 = [''.join(result) for result in itertools.product(possibleBases['side1'], side1)]
             side2 = [''.join(result[::-1]) for result in itertools.product(possibleBases['side2'], side2)]
