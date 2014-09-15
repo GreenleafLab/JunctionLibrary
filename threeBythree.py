@@ -13,11 +13,14 @@
 import numpy as np
 import os
 import sys
-import create_library
 
-# load stored sequences from globalvars file
+# load custom libraries
+import create_library
 import globalvars
 parameters = globalvars.Parameters()
+from hjh.helix import Helix
+from hjh.junction import Junction
+import create_library
 
 ##### FUNCTIONS #####
 def getFilename(helixName, description, loopName, receptorName, junctionMotifs):
@@ -28,7 +31,7 @@ def getFilename(helixName, description, loopName, receptorName, junctionMotifs):
                 '_'.join([''.join(result) for result in junctionMotifs])]
     return '.'.join(fileName)+'.txt'
 
-def saveSet(junction, helices, receptorName, loopName, f, countAll):
+def saveSet(junction, helices, helixName, receptorName, loopName, f, countAll):
     """
     this is just a space saver. Calls the saveSequences command for a given
     set of junctions, helices,  receptor, and loop)
@@ -42,102 +45,117 @@ def saveSet(junction, helices, receptorName, loopName, f, countAll):
                          parameters.sequencingAdapters,
                          f)
     print 'Saved %d sequences...'%(count+countAll)
+    logfile.write('%s\t%s\t%s\t%s\t%d\t%d\t%d\t%d\n'%(helixName, receptorName, loopName,
+                                                      ','.join(junction.motif),
+                                          junction.howManyPossibilities(),
+                                          len(junction.sequences),
+                                          len(helices),
+                                          count
+                                          ))
     return f, count
 
-def saveSetNoJunction(junction, helixName, receptorName, loopName, f, countAll):
-    """
-    given a class of junctions, helixName, receptorName, and loopName,
-    find helices associated with NO junction (1 helix).
-    save all possible to open file f.
-    """
-    helices = Helix(parameters.helixDict[helixName], junction.length).noJunctionLocation()
-    f, count = saveSet(junction, helices, receptorName, loopName, f, countAll)
-    return f, count+countAll
-
-def saveSetAlong(junction, helixName, receptorName, loopName, f, countAll):
-    """
-    given a class of junctions, helixName, receptorName, and loopName,
-    find helices associated with junctions positioned in 20 DIFFERENT locations (20 helices).
-    save all possible to open file f.
-    """
-    helices = Helix(parameters.helixDict[helixName], junction.length).alongHelix()
-    f, count = saveSet(junction, helices, receptorName, loopName, f, countAll)
-    return f, count+countAll
-
-def saveSetCentral(junction, helixName, receptorName, loopName, f, countAll):
-    """
-    given a class of junctions, helixName, receptorName, and loopName,
-    find helices associated with junctions positioned in 
-    """
-    helices = Helix(parameters.helixDict[helixName], junction.length).centralRegion()
-    f, count = saveSet(junction, helices, receptorName, loopName, f, countAll)
-    return f, count+countAll
-
-
 ##### MODULE #####
-
 """
-First step: do all junctions that are going to be in 'along' configuration of helix
+SETUP
+set working directory, create filename to save all subsequent
+sequences to.
+Initialize count.
 """
-# open filename
-wd = os.path.join(os.getcwd(), 'libraries')
-if not os.path.exists(wd): os.mkdir(wd)
+wd = os.path.join(os.getcwd(), 'libraries') # working directory
 
+# check if working directory exists and if not, creates it
+if not os.path.exists(wd):
+    os.mkdir(wd)
+    
+# initialize file
 filename = os.path.join(wd, 'all3x3junctions.txt')
 print 'saving to %s'%filename
 f = open(filename, 'w')
 
+# initalize log file
+logfile = open(os.path.join(wd, '%s.log'%os.path.splitext(filename)[0]), 'w')
+
+# initialize counts
 count = 1
 
 
 """
-order of operations for no junctions
+JUNCTIONS IN ONE POSITION MANY HELICES
+Save all junctions with 10 different helix contexts. 
 """
-print 'Doing no Junction set'
-junctionMotif = ('',)
-junction = Junction(junctionMotif)
-
-# saving all helixes, no junction, correct receptors..
-print '\tsaving all helixes, no junction, correct receptors..'
+junctionMotifs = parameters.allJunctions
 receptorName = 'R1'
-loopName     = 'GGAA'
-helixNames   = parameters.helixDict.keys()  # all helices
-for helixName in helixNames:
-    f, count = saveSetNoJunction(junction, helixName, receptorName, loopName, f, count)
+loopName     = 'goodLoop'
+helixNames   = parameters.allHelixNames # all helices
+for junctionMotif in junctionMotifs:
+    junction = Junction(junctionMotif)
+    for helixName in helixNames:
+        # helices in default location
+        helices = Helix(parameters.helixDict[helixName], junction.length).centerLocation()
+        f, count = saveSet(junction, helices, helixName, receptorName, loopName, f, countAll)
 
-# saving only one helix, no junction, different loop   
-print '\tsaving only one helix, no junction, different loop ..'
+"""
+JUNCTIONS IN ONE POSITION DIFFERENT TERTIARY CONTACT
+Save subset of junctIons with different loop.
+"""
+junctionMotifs = [('',)]
 receptorName = 'R1'
-loopName     = 'GAAA'
+loopName     = 'badLoop'
 helixName    = 'rigid'
-f, count = saveSetNoJunction(junction, helixName, receptorName, loopName, f, count)
-
-# saving only one helix, no junction, 6 different receptors
-print '\tsaving only one helix, no junction, 6 different receptors'
-receptorNames = ['KL1', 'KL2']
-loopName      = 'GGAA'
-helixName     = 'rigid'
-for receptorName in receptorNames:
-    f, count = saveSetNoJunction(junction, helixName, receptorName, loopName, f, count)
+for junctionMotif in junctionMotifs:
+    helices = Helix(parameters.helixDict[helixName], junction.length).centerLocation()
+    f, count = saveSet(junction, helices, helixName, receptorName, loopName, f, count)
 
 """
-order of operations for subset of junctions located in 'along' set
+JUNCTIONS IN ONE POSITION DIFFERENT TERTIARY CONTACT
+Save subset of junctions with different receptors
+"""
+junctionMotifs = [('',)]
+receptorNames = ['KL1', 'KL2']
+loopName      = 'goodLoop'
+helixName     = 'rigid'
+for junctionMotif in junctionMotifs:
+    for receptorName in receptorNames:
+        helices = Helix(parameters.helixDict[helixName], junction.length).centerLocation()
+        f, count = saveSet(junction, helices, helixName, receptorName, loopName, f, count)
+"""
+JUNCTIONS IN ALL 20 POSITIONS
+Save subset of junctions located in 'along' set
 """
 # save one helix context, many junctions, in many different locations
 print 'Doing 20 different positions of subset of junctions'
-junctionMotifs = [('M',), ('M', 'M'), ('B1',), ('B2',), ('W',)]
+junctionMotifs = parameters.alongJunctions
 receptorName = 'R1'
-loopName     = 'GGAA'
+loopName     = 'goodLoop'
 helixName    = 'rigid'
 for junctionMotif in junctionMotifs:
     junction = Junction(junctionMotif)
-    f, count = saveSetAlong(junction, helixName, receptorName, loopName, f, count)
-
+    helices = Helix(parameters.helixDict[helixName], junction.length).alongHelix()
+    f, count = saveSet(junction, helices, helixName, receptorName, loopName, f, countAll)
+    
+"""
+JUNCTIONS IN CENTRAL REGION
+Save subset of junctions located in 'central' set
+"""
 # save one helix context, many junctions, in many different locations
 print 'Doing 13 different positions of subset of junctions'
-junctionMotifs = [('M',), ('M', 'M'), ('B1',), ('B2',), ('W',)]
+junctionMotifs = parameters.centralJunctions
 receptorName = 'R1'
-loopName     = 'GGAA'
+loopName     = 'goodLoop'
 helixName    = 'rigid'
+cutOffNumber = 576
+for junctionMotif in junctionMotifs:
+    junction = Junction(junctionMotif)
+    
+    # take subset of junctions spanning 576 junctions. Should only affect the 3x3 loop
+    if junction.howManyPossibilities() > cutOffNumber:
+        subsetIndex = np.around(np.linspace(0, junction.howManyPossibilities()-1, cutOffNumber)).astype(int)
+        junction.sequences = junction.sequences[subsetIndex]
+        
+    # now save
+    helices = Helix(parameters.helixDict[helixName], junction.length).centralRegion()
+    f, count = saveSet(junction, helices, helixName, receptorName, loopName, f, countAll)
 
-print 'Doing 1 different positions of subset of junctions in one location, all different helices'
+# close
+f.close()
+logfile.close()
