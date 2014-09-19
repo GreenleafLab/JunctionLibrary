@@ -16,21 +16,31 @@ class Parameters():
     """
     def __init__(self):
         # tecto RNA parameters
+        """
+        helices include rigid, watson crick, and then 10 other essentially random helices.
+        helices were generated to have particular GC content (0.25, 0.5, 0.75), and then
+        run through Fang's code ('simu_tecto.py') to find energetics of tecto construct.
+        Final energy was sorted from lowest to highest, and these are a chosen subset of
+        the original 30 helices. See HJH_project/data/simulations/9_15_14_tectoRNA_sims.xlxs
+        """
         self.helixDict = {'rigid':  ('AAGATCCTGG', 'CTGGGATCTT'),
                           'wc':     ('AAGATCCTCG', 'CGAGGATCTT'),
-                          'h01':    ('AAAAAAAAAA', 'TTTTTTTTTT'),
-                          'h02':    ('AAAAAAAAAA', 'TTTTTTTTTT'),
-                          'h03':    ('AAAAAAAAAA', 'TTTTTTTTTT'),
-                          'h04':    ('AAAAAAAAAA', 'TTTTTTTTTT'),
-                          'h05':    ('AAAAAAAAAA', 'TTTTTTTTTT'),
-                          'h06':    ('AAAAAAAAAA', 'TTTTTTTTTT'),
-                          'h07':    ('AAAAAAAAAA', 'TTTTTTTTTT'),
-                          'h08':    ('AAAAAAAAAA', 'TTTTTTTTTT'),
-
+                            'h02': ('CATATGTACT', 'AGTACATATG'),
+                            'h06': ('CCTGATTTGT', 'ACAAATCAGG'),
+                            'h08': ('TAAATCAGCC', 'GGCTGATTTA'),
+                            'h10': ('CAGCACTGCC', 'GGCAGTGCTG'),
+                            'h12': ('GATTGCCCTT', 'AAGGGCAATC'),
+                            'h14': ('AAAGCCTTGA', 'TCAAGGCTTT'),
+                            'h16': ('AGCCGGCAAG', 'CTTGCCGGCT'),
+                            'h21': ('AGGCCGGCTG', 'CAGCCGGCCT'),
+                            'h25': ('GCGGCTGTAA', 'TTACAGCCGC'),
+                            'h28': ('AAGAAACGAC', 'GTCGTTTCTT'),
         }
+        self.standardHelixNames = np.array(['rigid', 'wc'])
+        
         self.allHelixNames = np.sort(self.helixDict.keys())
-        
-        
+        self.otherHelixNames = self.allHelixNames[np.logical_not(np.in1d(self.allHelixNames, self.standardHelixNames))]
+
         self.loopDict = {'goodLoop': 'GGAA',
                          'badLoop': 'GAAA',
                          'KL1': 'AAGATTCCA',

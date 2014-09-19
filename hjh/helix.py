@@ -146,8 +146,14 @@ class Helix(object):
         sequence = self.sequence
         helixLength = self.effectiveLength
         
-        helixOneLength = np.arange(helixLength+1)
+        # for standard helix length
+        helixOneLength = range(helixLength+1)
         totalLengths = [helixLength]*len(helixOneLength)
+        
+        # for increase helix length by two
+        for i in range(1, helixLength+2):
+            helixOneLength.append(i)
+            totalLengths.append(helixLength+2)
         
         return self.formatHelices(totalLengths, helixOneLength)
     

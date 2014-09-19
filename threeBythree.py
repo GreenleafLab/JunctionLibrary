@@ -45,7 +45,7 @@ def saveSet(junction, helices, helixName, receptorName, loopName, f, countAll):
                          parameters.sequencingAdapters,
                          f)
     print 'Saved %d sequences...'%(count+countAll)
-    logfile.write('%s\t%s\t%s\t%s\t%d\t%d\t%d\t%d\n'%(helixName, receptorName, loopName,
+    logfile.write('%s\t%s\t%s\t%s\t%d\t%d\t%d\t\t%d\n'%(receptorName, loopName, helixName,
                                                       ','.join(junction.motif),
                                           junction.howManyPossibilities(),
                                           len(junction.sequences),
@@ -80,44 +80,58 @@ count = 1
 
 
 """
-JUNCTIONS IN ONE POSITION MANY HELICES
-Save all junctions with 10 different helix contexts. 
+STANDARD: One position, Rigid and Watson Crick
+Save all junctions in one position in two different helix contextx. 
 """
 junctionMotifs = parameters.allJunctions
 receptorName = 'R1'
 loopName     = 'goodLoop'
-helixNames   = parameters.allHelixNames # all helices
+helixNames   = parameters.standardHelixNames
 for junctionMotif in junctionMotifs:
     junction = Junction(junctionMotif)
     for helixName in helixNames:
         # helices in default location
         helices = Helix(parameters.helixDict[helixName], junction.length).centerLocation()
-        f, count = saveSet(junction, helices, helixName, receptorName, loopName, f, countAll)
+        f, count = saveSet(junction, helices, helixName, receptorName, loopName, f, count)
 
 """
-JUNCTIONS IN ONE POSITION DIFFERENT TERTIARY CONTACT
-Save subset of junctIons with different loop.
+DIFFERENT HELIX CONTEXT: One position, subset of junctions, ten other helix contexts
+Save subset of junctions in one position in ten different helix contextx. 
 """
-junctionMotifs = [('',)]
+junctionMotifs = parameters.allJunctions
 receptorName = 'R1'
-loopName     = 'badLoop'
-helixName    = 'rigid'
+loopName     = 'goodLoop'
+helixNames   = parameters.otherHelixNames
+cutOffNumber = 12
 for junctionMotif in junctionMotifs:
-    helices = Helix(parameters.helixDict[helixName], junction.length).centerLocation()
-    f, count = saveSet(junction, helices, helixName, receptorName, loopName, f, count)
-
-"""
-JUNCTIONS IN ONE POSITION DIFFERENT TERTIARY CONTACT
-Save subset of junctions with different receptors
-"""
-junctionMotifs = [('',)]
-receptorNames = ['KL1', 'KL2']
-loopName      = 'goodLoop'
-helixName     = 'rigid'
-for junctionMotif in junctionMotifs:
-    for receptorName in receptorNames:
+    junction = Junction(junctionMotif)
+    
+    # take a subset of junctions of each junction topology
+    if junction.howManyPossibilities() > cutOffNumber:
+        subsetIndex = np.around(np.linspace(0, junction.howManyPossibilities()-1, cutOffNumber)).astype(int)
+        junction.sequences = junction.sequences[subsetIndex]
+    
+    # for each helix name
+    for helixName in helixNames:
+        # helices in default location
         helices = Helix(parameters.helixDict[helixName], junction.length).centerLocation()
         f, count = saveSet(junction, helices, helixName, receptorName, loopName, f, count)
+
+"""
+JUNCTIONS IN ONE POSITION DIFFERENT LOOP
+Save subset of junctions with different loop.
+"""
+junctionMotifs = parameters.allJunctions
+receptorName = 'R1'
+loopName     = 'badLoop'
+helixName    = parameters.standardHelixNames
+for junctionMotif in junctionMotifs:
+    junction = Junction(junctionMotif)
+    # for each helix name
+    for helixName in helixNames:
+        helices = Helix(parameters.helixDict[helixName], junction.length).centerLocation()
+        f, count = saveSet(junction, helices, helixName, receptorName, loopName, f, count)
+
 """
 JUNCTIONS IN ALL 20 POSITIONS
 Save subset of junctions located in 'along' set
@@ -130,9 +144,15 @@ loopName     = 'goodLoop'
 helixName    = 'rigid'
 for junctionMotif in junctionMotifs:
     junction = Junction(junctionMotif)
+    # if junction is 'W', do it in all different helix contexts. Everythin else, do in two
+    if junctionMotif = 'W':
+        helixNames = parameters.allHelixNames
+        for helixName in helixNames:
+
+    else:
+        helixNames = parameters.standardHelixNames
     helices = Helix(parameters.helixDict[helixName], junction.length).alongHelix()
-    f, count = saveSet(junction, helices, helixName, receptorName, loopName, f, countAll)
-    
+    f, count = saveSet(junction, helices, helixName, receptorName, loopName, f, count)
 """
 JUNCTIONS IN CENTRAL REGION
 Save subset of junctions located in 'central' set
@@ -154,7 +174,7 @@ for junctionMotif in junctionMotifs:
         
     # now save
     helices = Helix(parameters.helixDict[helixName], junction.length).centralRegion()
-    f, count = saveSet(junction, helices, helixName, receptorName, loopName, f, countAll)
+    f, count = saveSet(junction, helices, helixName, receptorName, loopName, f, count)
 
 # close
 f.close()
