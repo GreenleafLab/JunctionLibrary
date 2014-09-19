@@ -67,22 +67,24 @@ import subprocess
 
 
 def satmutagenesis(base, pos):
+    
+    #Where do i put new subfunctions?
     # f = open fileID. Save the possible sequences
    def makeotherbases(base,pos,others)
    seqs = [];
+
    for num in others
-    seq1 = base;
-    seq1[pos] = 
+    seq1 = list(base);
+    seq1[pos] = others[num]; 
    
    return seqs
    
-   
+############################
    count = 0
    sequence = [];
     for pos in positions:
-        
             orig = base(pos_s)
-        if orig == 'A'
+        if orig == 'A':
             others = 'TCG';
             seqs = makeotherbases(base,pos,others)
         elif orig == 'T'
