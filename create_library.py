@@ -42,12 +42,15 @@ def twoWayJunctionOrder(helixSequence, junctionSequence, receptor, base, sequenc
     (two entries each side), this is the way to thread together, adjoining each entry to either
     side of central point (i.e. loop)
     """
+    print helixSequence
+    print junctionSequence
     sequenceList = [(helixSequence['h2_side1'], helixSequence['h2_side2']),
                     (junctionSequence['side1'], junctionSequence['side2']),
                     (helixSequence['h1_side1'], helixSequence['h1_side2']),
                     (receptor[0], receptor[1]),
                     (base[0], base[1]),
                     (sequencingAdapters[0], sequencingAdapters[1])]
+    
     return sequenceList
     
 def saveSequences(names, junctionSequences, helixSequences, receptor,  loop, base, sequencingAdapters, f):

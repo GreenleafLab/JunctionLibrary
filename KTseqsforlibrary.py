@@ -139,9 +139,10 @@ junction = Junction(junctionMotifs[0])
 for KTname in KTnames:
     countAll = count + 1
     KTseq = KTMotifs[KTname]
-    junction.sequence = KTseq
-    print(junction.sequence)    
-    helices = Helix(parameters.KThelixDict[helixName],0 ).alongHelix()
+    junction.sequences[0] = KTseq
+    junction.length = 6
+    #helices = Helix(parameters.KThelixDict[helixName],0).alongHelix()
+    helices = Helix(parameters.helixDict['rigid'], junction.length).alongHelix()
     f, count = saveSet(junction, helices, helixName, receptorName, loopName, f, count)
     #what is this count variable?
 """
@@ -158,14 +159,16 @@ loopName     = 'goodLoop'
 helixName    = 'KThelix1'
 KTmotif_base = parameters.allKT_Names[1]
 junctionMotif = [('',)]
-for junctionMotif in junctionMotifs:
-    junction = Junction(junctionMotif)
+
+junction = Junction(junctionMotifs[0])
     
 KTseq = KTMotifs[KTmotif_base]  
-junction.sequences = KTseq
+junction.sequences[0] = KTseq
+junction.length = 6
         
 # now save
-helices = Helix(parameters.KThelixDict[helixName], 0).centralRegion()
+#helices = Helix(parameters.KThelixDict[helixName], 0).centralRegion()
+helices = Helix(parameters.helixDict['rigid'], junction.length).centralRegion()
 f, count = saveSet(junction, helices, helixName, receptorName, loopName, f, count)
 
 
