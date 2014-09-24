@@ -11,10 +11,18 @@
 import numpy as np
 
 class Parameters():
+    
+
     """
     stores helix sequences, loop sequences, base sequences, and library construct sequences
     """
     def __init__(self):
+        """
+        where to save files
+        """
+        self.wd = '~/Dropbox/HJH_project/HJH_project/libraries/v1'
+    
+        
         # tecto RNA parameters
         """
         helices include rigid, watson crick, and then 10 other essentially random helices.

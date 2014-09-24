@@ -29,7 +29,8 @@ set working directory, create filename to save all subsequent
 sequences to.
 Initialize count.
 """
-wd = os.path.join(os.getcwd(), 'libraries') # working directory
+#wd = os.path.join(os.getcwd(), 'libraries') # working directory
+wd = parameters.wd
 
 # check if working directory exists and if not, creates it
 if not os.path.exists(wd):
