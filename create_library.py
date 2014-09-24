@@ -11,6 +11,8 @@ from hjh.helix import Helix
 from hjh.junction import Junction
 from hjh.seqfun import reverseComplement
 import subprocess
+import globalvars
+parameters = globalvars.Parameters()
 
 def threadTogether(inside, outside):
     """
@@ -36,6 +38,22 @@ def countSequences(junctionSequences, helixSequences, receptor,  loop, base):
             count += 1           
     return count
 
+def doubleDoubleJunctionOrder(helixSequence, junctionSequence, receptor, base, sequencingAdapters):
+    """
+    In the case where you have two junctions per helix and three subhelices,
+    i.e. double double configuration,
+    Threading order is more complicated
+    """
+    sequenceList = [(helixSequence['h3_side1'], helixSequence['h3_side2']),
+                    (junctionSequence['j2_side1'], junctionSequence['j2_side2']),
+                    (helixSequence['h2_side1'], helixSequence['h2_side2']),
+                    (junctionSequence['j1_side1'], junctionSequence['j1_side2']),
+                    (helixSequence['h1_side1'], helixSequence['h1_side2']),
+                    (receptor[0], receptor[1]),
+                    (base[0], base[1]),
+                    (sequencingAdapters[0], sequencingAdapters[1])]
+    return sequenceList
+
 def twoWayJunctionOrder(helixSequence, junctionSequence, receptor, base, sequencingAdapters):
     """
     for a single two-way junction (one entry each side) and single helix breakpoint
@@ -49,7 +67,47 @@ def twoWayJunctionOrder(helixSequence, junctionSequence, receptor, base, sequenc
                     (base[0], base[1]),
                     (sequencingAdapters[0], sequencingAdapters[1])]
     return sequenceList
-    
+
+def saveSequenceDoubleDouble(names, junctionSequences, helixSequences, receptor,  loop, base, sequencingAdapters, f):
+    # f = open fileID. Save the possible sequences
+    count = 0
+
+    # for every junction sequence included by 'junctionMotif'
+    for junctionSequence in junctionSequences:
+        
+        # for every helix orientation/sequence given by 'helices'
+        for helixSequence in helixSequences:
+            
+            # give a name to each junction/helix orientation
+            name = '%s.%s.%d_%d'%('.'.join(names),
+                                  '_'.join(junctionSequence),
+                                            len(helixSequence['h2_side1']),
+                                            len(''.join(helixSequence))/2)
+            
+            # find the list of tuples that are added to either side of a central region to
+            # obtain the final sequence.
+            sequenceList = doubleDoubleJunctionOrder(helixSequence, junctionSequence, receptor, base, sequencingAdapters)
+            
+            # starting with the loop, progressively add each tuple in sequence list to either side
+            # only add up to tecto Base before assessing structure
+            sequence = loop
+            for outside in sequenceList[:-1]:
+                sequence = threadTogether(sequence, outside)
+                    
+            # call RNAFold (vienna package) to get dot bracket notation
+            structure = subprocess.check_output('echo '+sequence+' | RNAFold --noPS', shell=True).split('\n')[1].split(' (')
+            dotbracket = structure[0]
+            energy = float(structure[1].strip('()'))
+            
+            # now add sequencing adapters
+            sequence = threadTogether(sequence, sequenceList[-1])
+            
+            # save to open file
+            f.write('%s\t%s\t%d\t%4.2f\t%s\n'%(name, sequence, len(sequence), energy, dotbracket))
+            count += 1
+            
+    return count
+  
 def saveSequences(names, junctionSequences, helixSequences, receptor,  loop, base, sequencingAdapters, f):
     # f = open fileID. Save the possible sequences
     count = 0
@@ -88,7 +146,40 @@ def saveSequences(names, junctionSequences, helixSequences, receptor,  loop, bas
             f.write('%s\t%s\t%d\t%4.2f\t%s\n'%(name, sequence, len(sequence), energy, dotbracket))
             count += 1
             
-    return f, count
+    return count
+
+def saveSet(junction, helices, helixName, receptorName, loopName, f, logfile, countAll, savetype=None):
+    """
+    this is just a space saver. Calls the saveSequences command for a given
+    set of junctions, helices,  receptor, and loop)
+    """
+    if savetype is None:
+        count = saveSequences([helixName, receptorName, loopName],
+                             junction.sequences,
+                             helices,
+                             parameters.receptorDict[receptorName],
+                             parameters.loopDict[loopName],
+                             parameters.tectoBase,
+                             parameters.sequencingAdapters,
+                             f)
+    elif savetype == 'double':
+        count = saveSequenceDoubleDouble([helixName, receptorName, loopName],
+                             junction.sequences,
+                             helices,
+                             parameters.receptorDict[receptorName],
+                             parameters.loopDict[loopName],
+                             parameters.tectoBase,
+                             parameters.sequencingAdapters,
+                             f)
+    print 'Saved %d sequences...'%(count+countAll)
+    logfile.write('%s\t%s\t%s\t%s\t%d\t%d\t%d\t\t%d\n'%(receptorName, loopName, helixName,
+                                                      ','.join(junction.motif),
+                                          junction.howManyPossibilities(),
+                                          len(junction.sequences),
+                                          len(helices),
+                                          count
+                                          ))
+    return count
 
 if __name__ == '__main__':
     
