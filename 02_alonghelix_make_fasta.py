@@ -54,11 +54,17 @@ receptorName = 'R1'
 loopNames     = ['goodLoop', 'badLoop']
 helixName    = parameters.standardHelixNames
 
-junctionMotif = ('M', 'M', 'B1')
-junction = Junction(junctionMotif)
+# show GU wobbles
+junction = Junction(('',))
+junction.sequences[0] = ('GU', 'GU')
+junction.length = 2
+
+# show AA mismatch
+junction = Junction(('M','M'))
+
 junctionSequence = junction.sequences[0]
 loopName = 'goodLoop'
-helixName = 'rigid'
+helixName = 'wc'
 helices = Helix(parameters.helixDict[helixName], junction.length).alongHelix()
 
 for helixSequence in helices:
