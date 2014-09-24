@@ -7,6 +7,8 @@
 
 ##### IMPORT #####
 import numpy as np
+import globalvars
+parameters = globalvars.Parameters()
 
 class Helix(object):
     def __init__(self, helixSequence, junctionLength):
@@ -122,7 +124,7 @@ class Helix(object):
         sequence = self.sequence
         helixLength = self.effectiveLength
         
-        possibleLengths = np.arange(helixLength-2, helixLength+3)
+        possibleLengths = np.arange(helixLength-1, helixLength+3)
         helixOneLengths = []
         helixTwoLengths = []
         for i, possLength in enumerate(possibleLengths):
@@ -158,5 +160,44 @@ class Helix(object):
         return self.formatHelices(totalLengths, helixOneLength)
     
     def doubleDouble(self):
+        """
+        Return helix split into 3 parts now
+        """
+        sequence = self.sequence
+        helixLength = self.effectiveLength
         
-        return
+        side1 = sequence[0]
+        side2 = sequence[1]
+        middleHelixSequence = parameters.middleHelix
+        side1_middle = middleHelixSequence[0]
+        side2_middle = middleHelixSequence[1]
+        
+        # for standard helix length
+        separationLength = [3,4,5,6,7]
+        totalLengths = [helixLength]*len(separationLength)
+        
+        # for increase helix length by two
+        for i in range(3, 9):
+            separationLength.append(i)
+            totalLengths.append(helixLength+2)
+            
+        # now format helix
+        numCombos = len(totalLengths)
+        helixAll = np.array(np.empty(numCombos),
+                            dtype={'names':('h1_side1', 'h2_side1', 'h3_side1', 'h3_side2', 'h2_side2', 'h1_side2'),
+                                'formats':('S1000', 'S1000', 'S1000', 'S1000', 'S1000', 'S1000')})   
+        for i in range(numCombos):
+            # being careful to get everything in the proper orientation
+            # in linear space the order is: helix1 side1, helix2 side1, helix2 side2, helix1 side1
+            break1 = int(np.floor((totalLengths[i] - separationLength[i])/2.0))
+            break2 = break1 + separationLength[i]
+            middleHelixInd = np.arange((len(side1)-separationLength[i])/2, (len(side1)+separationLength[i])/2)
+            helixAll['h1_side1'][i] = side1[:break1]
+            helixAll['h2_side1'][i] = side1_middle[(len(side1)-separationLength[i])/2:(len(side1)+separationLength[i])/2]
+            helixAll['h3_side1'][i] = side1[-(totalLengths[i]-break2):]
+            
+            helixAll['h3_side2'][i] = side2[::-1][-(totalLengths[i]-break2):][::-1]
+            helixAll['h2_side2'][i] = side2_middle[::-1][(len(side1)-separationLength[i])/2:(len(side1)+separationLength[i])/2][::-1]
+            helixAll['h1_side2'][i] = side2[::-1][:break1][::-1]
+  
+        return helixAll
