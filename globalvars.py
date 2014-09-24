@@ -155,12 +155,12 @@ class Parameters():
                                     ('B2', 'M',  'M' ), ('B2', 'M' ), ('B2', 'B2', 'M')]
         
         # these are the junctions that are both central and different loop mutants
-        self.differentLoopJunctions = [('',),('M',), ('M', 'M'), ('W',),
+        self.differentLoopJunctions = [('',),('M',), ('M', 'M'),
                             ('M','M','M'),
-                            ('B1', 'B1'), ('B1', 'B1', 'B1'), ('B2', 'B2'), ('B2', 'B2', 'B2'),
+                            ('M', 'B1'), ('M', 'B2'),
                             ('M',  'B1', 'B1'), ('M',  'M', 'B1'),
                             ('B2', 'M',  'M' ), ('B2', 'B2', 'M')]
-        self.sameLoopJunctions = [('B1', ), ('B2',), ('M', 'B1'), ('M', 'B2')]
+        self.sameLoopJunctions = [('B1', ), ('B2',), ('B1', 'B1'), ('B1', 'B1', 'B1'), ('B2', 'B2'), ('B2', 'B2', 'B2')]
         
         # sequencing library parameters
         self.sequencingAdapters = ('TTGTATGGAAGACGTTCCTGGATCC', 'AGATCGGAAGAGCGGTTCAGC')
