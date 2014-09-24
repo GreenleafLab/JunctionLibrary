@@ -74,7 +74,7 @@ for junctionMotif in junctionMotifs:
         count = create_library.saveSet(junction, helices, helixName, receptorName, loopName, f, logfile, count)
 
 # Do single mismatch, double mismatch, 1x3 junction in WC context   
-junctionMotifs = [('M',) ('M', 'B1', 'B1'), ('B2', 'B2', 'M')]
+junctionMotifs = [('M',), ('M', 'B1', 'B1'), ('B2', 'B2', 'M')]
 helixName = 'wc'
 for junctionMotif in junctionMotifs:
     junction = Junction(junctionMotif)

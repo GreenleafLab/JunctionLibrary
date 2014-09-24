@@ -37,38 +37,41 @@ if not os.path.exists(wd):
     os.mkdir(wd)
     
 # initialize file
-filename = os.path.join(wd, 'all3x3junctions.02_alonghelix.fasta')
+filename = os.path.join(wd, 'all3x3junctions.01_helixcontext.fasta')
 print 'saving to %s'%filename
 f = open(filename, 'w')
+
 
 # initialize counts
 count = 1
 
 """
-JUNCTIONS IN ALL 20 POSITIONS
-Save subset of junctions located in 'along' set. Also do different loop for all of these.
+DIFFERENT HELIX CONTEXT: One position, subset of junctions, ten other helix contexts
+Save subset of junctions in one position in ten different helix contextx. 
 """
-# save one helix context, many junctions, in many different locations
-print 'Doing 20 different positions of subset of junctions'
-junctionMotifs = parameters.alongJunctions
+junctionMotifs = parameters.differentHelixJunctions
 receptorName = 'R1'
-loopNames     = ['goodLoop', 'badLoop']
-helixName    = parameters.standardHelixNames
+loopName     = 'goodLoop'
+helixNames   = parameters.otherHelixNames
+cutOffNumber = 12
+junctionMotif = ('M', 'B2', 'B2')
 
-# show GU wobbles
-junction = Junction(('',))
-junction.sequences[0] = ('GU', 'GU')
-junction.length = 2
-
-# show AA mismatch
-junction = Junction(('M','M'))
+junction = Junction(junctionMotif)
+    
+# take a subset of junctions of each junction topology
+if junction.howManyPossibilities() > cutOffNumber:
+    subsetIndex = np.around(np.linspace(0, junction.howManyPossibilities()-1, cutOffNumber)).astype(int)
+    junction.sequences = junction.sequences[subsetIndex]
 
 junctionSequence = junction.sequences[0]
-loopName = 'goodLoop'
-helixName = 'wc'
-helices = Helix(parameters.helixDict[helixName], junction.length).alongHelix()
-
-for helixSequence in helices:
+    
+# for each helix name
+for helixName in helixNames:
+    # helices in default location
+    helices = Helix(parameters.helixDict[helixName], junction.length).centerLocation()
+    
+    
+    helixSequence = helices[0]
     names = [helixName, receptorName, loopName]
     name = '%s.%s.%d_%d'%('.'.join(names),
               '_'.join(junctionSequence),
@@ -83,8 +86,7 @@ for helixSequence in helices:
     sequence = parameters.loopDict[loopName]
     for outside in sequenceList[:-1]:
         sequence = create_library.threadTogether(sequence, outside)
-    f.write('%s\n'%sequence)      
-
+    f.write('%s\n'%sequence)     
+    
 # close
 f.close()
-
