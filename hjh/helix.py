@@ -152,6 +152,11 @@ class Helix(object):
         helixOneLength = range(helixLength+1)
         totalLengths = [helixLength]*len(helixOneLength)
         
+        # for increase helix length by one
+        for i in range(1, helixLength+1):
+            helixOneLength.append(i)
+            totalLengths.append(helixLength+1)
+        
         # for increase helix length by two
         for i in range(1, helixLength+2):
             helixOneLength.append(i)

@@ -53,19 +53,15 @@ Save subset of junctions located in 'along' set. Also do different loop for all 
 """
 # save one helix context, many junctions, in many different locations
 print 'Doing 20 different positions of subset of junctions'
-junctionMotifs = parameters.alongJunctions
 receptorName = 'R1'
 loopNames     = ['goodLoop', 'badLoop']
-helixName    = parameters.standardHelixNames
 cutOffNumber = 24
+
+# Do Bulges in rigid context
+junctionMotifs = [('B1',), ('B2',)]
+helixName = 'rigid'
 for junctionMotif in junctionMotifs:
     junction = Junction(junctionMotif)
-    
-    # if junction is 'W', do it in all different helix contexts. Everything else, do in two
-    if junctionMotif == ('W',):
-        helixNames = parameters.allHelixNames
-    else:
-        helixNames = parameters.standardHelixNames
     
     # take subset of junctions if greater than cutoff number
     if junction.howManyPossibilities() > cutOffNumber:
@@ -74,12 +70,44 @@ for junctionMotif in junctionMotifs:
         
     # save all different loops
     for loopName in loopNames:
+        helices = Helix(parameters.helixDict[helixName], junction.length).alongHelix()
+        count = create_library.saveSet(junction, helices, helixName, receptorName, loopName, f, logfile, count)
+
+# Do single mismatch, double mismatch, 1x3 junction in WC context   
+junctionMotifs = [('M',) ('M', 'B1', 'B1'), ('B2', 'B2', 'M')]
+helixName = 'wc'
+for junctionMotif in junctionMotifs:
+    junction = Junction(junctionMotif)
     
-        # save with all different helices
-        for helixName in helixNames:
-            helices = Helix(parameters.helixDict[helixName], junction.length).alongHelix()
-            count = create_library.saveSet(junction, helices, helixName, receptorName, loopName, f, logfile, count)
-   
+    # take subset of junctions if greater than cutoff number
+    if junction.howManyPossibilities() > cutOffNumber:
+        subsetIndex = np.around(np.linspace(0, junction.howManyPossibilities()-1, cutOffNumber)).astype(int)
+        junction.sequences = junction.sequences[subsetIndex]
+        
+    # save all different loops
+    for loopName in loopNames:
+        helices = Helix(parameters.helixDict[helixName], junction.length).alongHelix()
+        count = create_library.saveSet(junction, helices, helixName, receptorName, loopName, f, logfile, count)
+
+# Do something special with double mismatches to ensure that GU wobbles are present
+helixName = 'wc'
+junctionMotif = ('M', 'M')
+junction = Junction(junctionMotif)
+
+# take subset of junctions if greater than cutoff number
+if junction.howManyPossibilities() > cutOffNumber:
+    subsetIndex = np.around(np.linspace(0, junction.howManyPossibilities()-1, cutOffNumber)).astype(int)
+    junction.sequences = junction.sequences[subsetIndex]
+
+# append GU wobble sequences
+wobbleSequences = [('GU', 'GU'), ('GG', 'UU'), ('UU', 'GG'), ('UG', 'UG')]
+junction.sequences = np.append(junction.sequences, np.array(wobbleSequences, dtype=junction.sequences.dtype))
+
+# save all different loops
+for loopName in loopNames:
+    helices = Helix(parameters.helixDict[helixName], junction.length).alongHelix()
+    count = create_library.saveSet(junction, helices, helixName, receptorName, loopName, f, logfile, count)
+
 
 # close
 f.close()
