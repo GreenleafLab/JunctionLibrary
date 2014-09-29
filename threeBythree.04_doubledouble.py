@@ -46,7 +46,7 @@ count = 1
 
 receptorName = 'R1'
 loopName     = 'goodLoop'
-helixName    = 'wc'
+helixName    = 'rigid'
 
 # junctions of length 0
 numConfigurations = 4

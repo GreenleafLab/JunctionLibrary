@@ -65,7 +65,7 @@ junction = Junction(('M','M'))
 
 junctionSequence = junction.sequences[0]
 loopName = 'goodLoop'
-helixName = 'wc'
+helixName = 'rigid'
 helices = Helix(parameters.helixDict[helixName], junction.length).alongHelix()
 
 for helixSequence in helices:

@@ -75,7 +75,7 @@ for junctionMotif in junctionMotifs:
 
 # Do single mismatch, double mismatch, 1x3 junction in WC context   
 junctionMotifs = [('M',), ('M', 'B1', 'B1'), ('B2', 'B2', 'M')]
-helixName = 'wc'
+helixName = 'rigid'
 for junctionMotif in junctionMotifs:
     junction = Junction(junctionMotif)
     
@@ -89,8 +89,10 @@ for junctionMotif in junctionMotifs:
         helices = Helix(parameters.helixDict[helixName], junction.length).alongHelix()
         count = create_library.saveSet(junction, helices, helixName, receptorName, loopName, f, logfile, count)
 
-# Do something special with double mismatches to ensure that GU wobbles are present
-helixName = 'wc'
+"""
+Do double mismatches in context of rigid helix
+"""
+helixName = 'rigid'
 junctionMotif = ('M', 'M')
 junction = Junction(junctionMotif)
 
@@ -99,14 +101,61 @@ if junction.howManyPossibilities() > cutOffNumber:
     subsetIndex = np.around(np.linspace(0, junction.howManyPossibilities()-1, cutOffNumber)).astype(int)
     junction.sequences = junction.sequences[subsetIndex]
 
+# save all different loops
+for loopName in loopNames:
+    helices = Helix(parameters.helixDict[helixName], junction.length).alongHelix()
+    count = create_library.saveSet(junction, helices, helixName, receptorName, loopName, f, logfile, count)
+
+"""
+But also do a subset of double mismatches that are all GU wobbles in WC context
+"""
+helixName = 'wc'
+junctionMotif = ('M', 'M')
+junction = Junction(junctionMotif)
+
 # append GU wobble sequences
 wobbleSequences = [('GU', 'GU'), ('GG', 'UU'), ('UU', 'GG'), ('UG', 'UG')]
-junction.sequences = np.append(junction.sequences, np.array(wobbleSequences, dtype=junction.sequences.dtype))
+junction.sequences = np.array(wobbleSequences, dtype=junction.sequences.dtype)
 
 # save all different loops
 for loopName in loopNames:
     helices = Helix(parameters.helixDict[helixName], junction.length).alongHelix()
     count = create_library.saveSet(junction, helices, helixName, receptorName, loopName, f, logfile, count)
+
+"""
+But also do a subset of single mismatches that are all GU wobbles in WC context
+"""
+helixName = 'wc'
+junctionMotif = ('M',)
+junction = Junction(junctionMotif)
+
+# append GU wobble sequences
+wobbleSequences = [('G', 'U'), ('U', 'G')]
+junction.sequences = np.array(wobbleSequences, dtype=junction.sequences.dtype)
+
+# save all different loops
+for loopName in loopNames:
+    helices = Helix(parameters.helixDict[helixName], junction.length).alongHelix()
+    count = create_library.saveSet(junction, helices, helixName, receptorName, loopName, f, logfile, count)
+
+"""
+Also do more junctions in the WC context
+"""
+# Do  1x3 junction in WC context   
+junctionMotifs = [('M', 'B1', 'B1'), ('B2', 'B2', 'M')]
+helixName = 'wc'
+for junctionMotif in junctionMotifs:
+    junction = Junction(junctionMotif)
+    
+    # take subset of junctions if greater than cutoff number
+    if junction.howManyPossibilities() > cutOffNumber:
+        subsetIndex = np.around(np.linspace(0, junction.howManyPossibilities()-1, cutOffNumber)).astype(int)
+        junction.sequences = junction.sequences[subsetIndex]
+        
+    # save all different loops
+    for loopName in loopNames:
+        helices = Helix(parameters.helixDict[helixName], junction.length).alongHelix()
+        count = create_library.saveSet(junction, helices, helixName, receptorName, loopName, f, logfile, count)
 
 
 # close

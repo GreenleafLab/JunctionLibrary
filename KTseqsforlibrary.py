@@ -16,8 +16,8 @@ import sys
 
 # load custom libraries
 import create_library
-import globalvars
-parameters = globalvars.Parameters()
+import globalvars_KT
+parameters = globalvars_KT.Parameters()
 from hjh.helix import Helix
 from hjh.junction import Junction
 import create_library
@@ -139,8 +139,8 @@ junction = Junction(junctionMotifs[0])
 for KTname in KTnames:
     countAll = count + 1
     KTseq = KTMotifs[KTname]
-    junction.sequence = KTseq
-    print(junction.sequence)    
+    junction.sequences[0] = KTseq
+    print(junction.sequences)    
     helices = Helix(parameters.KThelixDict[helixName],0 ).alongHelix()
     f, count = saveSet(junction, helices, helixName, receptorName, loopName, f, count)
     #what is this count variable?
@@ -162,7 +162,7 @@ for junctionMotif in junctionMotifs:
     junction = Junction(junctionMotif)
     
 KTseq = KTMotifs[KTmotif_base]  
-junction.sequences = KTseq
+junction.sequences[0] = KTseq
         
 # now save
 helices = Helix(parameters.KThelixDict[helixName], 0).centralRegion()

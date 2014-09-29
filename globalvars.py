@@ -65,7 +65,7 @@ class Parameters():
         
         self.loopDict = {   'goodLoop': 'GGAA',
                             'badLoop': 'GAAA',
-                            'R2_side1_0_6': 'GGAA',
+                            'R2_side1_0_6': 'ACCAGATA',
                             'R2_side1_0_5': 'ACCAGAA',
                             'R2_side1_1_6': 'ACAGATA',
                             'R2_side1_2_7': 'AAGATTA',
@@ -80,9 +80,8 @@ class Parameters():
                             'R2_side2_1_5': 'ACACAA',
                             'R2_side2_2_6': 'AACAGA',
                             'R2_side2_3_7': 'ACAGGA',
-                            'R2_side2_1_4': 'ACACA',
-                        }
-
+                            'R2_side2_1_4': 'ACACA'}
+        
         """
         RECEPTORS
         -receptors HIV *  are different binding parters of flow piece 3 (HIV kissing loop).

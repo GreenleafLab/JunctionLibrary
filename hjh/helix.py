@@ -124,7 +124,7 @@ class Helix(object):
         sequence = self.sequence
         helixLength = self.effectiveLength
         
-        possibleLengths = np.arange(helixLength-1, helixLength+3)
+        possibleLengths = np.arange(helixLength-2, helixLength+3)
         helixOneLengths = []
         helixTwoLengths = []
         for i, possLength in enumerate(possibleLengths):
