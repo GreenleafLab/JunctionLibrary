@@ -156,7 +156,68 @@ class Helix(object):
             totalLengths.append(helixLength+2)
         
         return self.formatHelices(totalLengths, helixOneLength)
+        
+   
+        
     
-    def doubleDouble(self):
+    #def doubleDouble(self):
+        
+    def KThelixMM(self):
+    
+        """
+        have different lengths of each sequence that make up the helix, as int he case of the kink turn
+        """
+        
+        
+        helixKTs = np.array(np.empty(1),
+                            dtype={'names':('h1_side1', 'h2_side1', 'h2_side2', 'h1_side2'),
+                                'formats':('S1000', 'S1000', 'S1000', 'S1000')})
+        
+        helixKTs[0]['h1_side1'] = 'A'
+        helixKTs[0]['h2_side1'] = 'GCCTGG'
+        helixKTs[0]['h2_side2'] = 'CTGGGCGAA'
+        helixKTs[0]['h1_side2'] = 'U'
+        
+        helixAll = helixKTs
+        self.printHelixOneAndTwo(helixAll)
+        return helixAll
+       
+    def KThelixWC(self):
+        """
+        have different lengths of each sequence that make up the helix, as int he case of the kink turn
+        """
+        
+        
+        helixKTs = np.array(np.empty(1),
+                            dtype={'names':('h1_side1', 'h2_side1', 'h2_side2', 'h1_side2'),
+                                'formats':('S1000', 'S1000', 'S1000', 'S1000')})
+      
+        helixKTs[0]['h1_side1'] = 'AGGA'
+        helixKTs[0]['h2_side1'] = 'CTGG'
+        helixKTs[0]['h2_side2'] = 'CTGG'
+        helixKTs[0]['h1_side2'] = 'GAAGAAT'
+        helixAll = helixKTs
+        self.printHelixOneAndTwo(helixAll)
+        return helixAll
+        
+    def KThelixBulge(self):
+    
+        """
+        have different lengths of each sequence that make up the helix, as int he case of the kink turn
+        """
+        
+        
+        helixKTs = np.array(np.empty(1),
+                            dtype={'names':('h1_side1', 'h2_side1', 'h2_side2', 'h1_side2'),
+                                'formats':('S1000', 'S1000', 'S1000', 'S1000')})
+       
+        helixKTs[0]['h1_side1'] = 'AGGA'
+        helixKTs[0]['h2_side1'] = 'GCCTGG'
+        helixKTs[0]['h2_side2'] = 'CTGGGC'
+        helixKTs[0]['h1_side2'] = 'GAAT'
+        
+        helixAll = helixKTs
+        self.printHelixOneAndTwo(helixAll)
+        return helixAll
         
         return

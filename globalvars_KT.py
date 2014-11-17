@@ -91,7 +91,7 @@ class Parameters():
                                     ('B2', 'M',  'M' ), ('B2', 'M' ), ('B2', 'B2', 'M')]
                                     
         # first step is to put 6 different kink turns at 4 different positions 
-        self.KinkTurnsdict =  ({'KT_1':('GGAGC', 'GGCGAAGAA'),
+        self.KinkTurnsdict =  ({'KT_1':('GGAGC', 'GCGAAGAA'), 
                                 'KT_2':('CGAGG', 'CCAAUGAG'),
                                 'KT_3': ('CGAGG', 'CCGUUUGAC'),
                                 'KT_4': ('GGAGG', 'CCGAUGAA'),
@@ -102,15 +102,13 @@ class Parameters():
         #length of the kink turn "junction " is the first side, the last KT is longer than the rest.
         # sequencing library parameters
         
-        self.KThelixDict = ({'KThelix1':  ('GTGG', 'CTGC')})
-        
-                           # 'KThelixMM':  ('GG GCCTGG', 'CTGGGCGAA AC')
-                           # 'KThelixWW':  ('GGGA CTGG', 'CTGG GAAGAAC')
-                            #'KThelixB2B2B2':  ('GGGAGCCTGG', 'CTGGGC GAAC')
-        
+        self.KThelixDict = ({'KThelix1':('GTGG', 'CTGC'),
+                            'KThelixMM':('GG GCCTGG', 'CTGGGCGAA AC'),
+                            'KThelixWW':('GGGA CTGG', 'CTGG GAAGAAC'),
+                            'KThelixB2B2B2':('GGGAGCCTGG', 'CTGGGC GAAC'),})
         
       
-        
+
         
           
         self.KTjunctions = [('M', 'M'),('W','W'),('B2', 'B2', 'B2')]

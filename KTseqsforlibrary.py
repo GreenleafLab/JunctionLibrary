@@ -16,8 +16,8 @@ import sys
 
 # load custom libraries
 import create_library
-import globalvars
-parameters = globalvars.Parameters()
+import globalvars_KT
+parameters = globalvars_KT.Parameters()
 from hjh.helix import Helix
 from hjh.junction import Junction
 import create_library
@@ -68,7 +68,7 @@ if not os.path.exists(wd):
     os.mkdir(wd)
     
 # initialize file
-filename = os.path.join(wd, 'KinkTurnSequences.txt')
+filename = os.path.join(wd, 'KinkTurnSequences_9_29_14.txt')
 print 'saving to %s'%filename
 f = open(filename, 'w')
 
@@ -144,7 +144,7 @@ for KTname in KTnames:
     #helices = Helix(parameters.KThelixDict[helixName],0).alongHelix()
     helices = Helix(parameters.helixDict['rigid'], junction.length).alongHelix()
     f, count = saveSet(junction, helices, helixName, receptorName, loopName, f, count)
-    #what is this count variable?
+   
 """
 JUNCTIONS IN CENTRAL REGION
 Save subset of junctions located in 'central' set
@@ -171,6 +171,29 @@ junction.length = 6
 helices = Helix(parameters.helixDict['rigid'], junction.length).centralRegion()
 f, count = saveSet(junction, helices, helixName, receptorName, loopName, f, count)
 
+"""
+Iterate through all posible mismatches, WC bases, and bulges for the three regions of the kink turn
+"""
+junctionMotifs = parameters.KTjunctions
+receptorName = 'R1'
+loopName     = 'goodLoop'
+helix_KTs = parameters.KThelixDict;
+for junctionMotif in junctionMotifs:
+    junction = Junction(junctionMotif)    
+    if junction.motif == ('M', 'M'):
+        helices = Helix(parameters.helixDict['rigid'], junction.length).KThelixMM()
+        helixname = 'rigid'
+        f, count = saveSet(junction, helices, helixname, receptorName, loopName, f, count)
+        
+    if junction.motif == ('W', 'W'):
+        helices = Helix(parameters.helixDict['rigid'], junction.length).KThelixWC()
+        helixname = 'rigid'
+        f, count = saveSet(junction, helices, helixname, receptorName, loopName, f, count)
+        
+    if junction.motif == ('B2', 'B2', 'B2'):
+        helices = Helix(parameters.helixDict['rigid'], junction.length).KThelixBulge()
+        helixname = 'rigid'
+        f, count = saveSet(junction, helices, helixname, receptorName, loopName, f, count)
 
 
 
