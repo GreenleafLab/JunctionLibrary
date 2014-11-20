@@ -23,6 +23,9 @@ class Parameters():
         Final energy was sorted from lowest to highest, and these are a chosen subset of
         the original 30 helices. See HJH_project/data/simulations/9_15_14_tectoRNA_sims.xlxs
         """
+        
+        self.wd = '/Users/nbisaria/Dropbox/HJH_project/libraries/NB/'
+        
         self.helixDict = {'rigid':  ('AAGATCCTGG', 'CTGGGATCTT'),
                           'wc':     ('AAGATCCTCG', 'CGAGGATCTT'),
                             'h02': ('CATATGTACT', 'AGTACATATG'),

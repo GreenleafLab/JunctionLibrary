@@ -13,14 +13,15 @@
 import numpy as np
 import os
 import sys
+import pandas as pd
 
 # load custom libraries
-import create_library
+import create_library_dataframe
 import globalvars_KT
 parameters = globalvars_KT.Parameters()
 from hjh.helix import Helix
 from hjh.junction import Junction
-import create_library
+
 
 ##### FUNCTIONS #####
 def getFilename(helixName, description, loopName, receptorName, junctionMotifs):
@@ -31,20 +32,21 @@ def getFilename(helixName, description, loopName, receptorName, junctionMotifs):
                 '_'.join([''.join(result) for result in junctionMotifs])]
     return '.'.join(fileName)+'.txt'
 
-def saveSet(junction, helices, helixName, receptorName, loopName, f, countAll):
+def saveSet(junction, helices, helixName, receptorName, loopName, f,f2, countAll):
     """
     this is just a space saver. Calls the saveSequences command for a given
     set of junctions, helices,  receptor, and loop)
     """
-    f, count = create_library.saveSequences([helixName, receptorName, loopName],
+    count = create_library_dataframe.saveSequences([helixName, receptorName, loopName],
                          junction.sequences,
                          helices,
                          parameters.receptorDict[receptorName],
                          parameters.loopDict[loopName],
                          parameters.tectoBase,
-                         parameters.sequencingAdapters,
-                         f)
-                         
+                         parameters.sequencingAdapters, junction,
+                         f,f2)
+                 
+  
     print 'Saved %d sequences...'%(count+countAll)
     logfile.write('%s\t%s\t%s\t%s\t%d\t%d\t%d\t%d\n'%(helixName, receptorName, loopName,
                                                       ','.join(junction.motif),
@@ -62,7 +64,8 @@ set working directory, create filename to save all subsequent
 sequences to.
 Initialize count.
 """
-wd = os.path.join(os.getcwd(), 'libraries') # working directory
+wd = parameters.wd
+
 
 # check if working directory exists and if not, creates it
 if not os.path.exists(wd):
@@ -75,56 +78,19 @@ f = open(filename, 'w')
 
 filename2 = os.path.join(wd, 'allKTjunctionsNB.06_characterization.txt')
 print 'saving to %s'%filename
-f2 = open(filename, 'w')
-
+f2 = open(filename2, 'w')
 
 # initalize log file
 logfile = open(os.path.join(wd, '%s.log'%os.path.splitext(filename)[0]), 'w')
 
 # initialize counts
 count = 1
+df = pd.DataFrame(columns = ['Sequence', 'Junction Topology','Loop', 'Receptor', 'HelixContext', 'Junction Sequence',
+            'HelixSequence', 'HelixLength1', 'Helixlength2','Junctionlength', 'Totallength']) 
+#add header
+df.to_csv(f2, sep='\t')
 
 
-#"""
-#JUNCTIONS IN ONE POSITION MANY HELICES
-#Save all junctions with 10 different helix contexts. 
-#"""
-#junctionMotifs = parameters.allJunctions
-#receptorName = 'R1'
-#loopName     = 'goodLoop'
-#helixNames   = parameters.allHelixNames # all helices
-#for junctionMotif in junctionMotifs:
-#    junction = Junction(junctionMotif)
-#    for helixName in helixNames:
-#        # helices in default location
-#        helices = Helix(parameters.helixDict[helixName], junction.length).centerLocation()
-#        #f, count = saveSet(junction, helices, helixName, receptorName, loopName, f, countAll)
-#        f, count = saveSet(junction, helices, helixName, receptorName, loopName, f, count)
-#
-#"""
-#JUNCTIONS IN ONE POSITION DIFFERENT TERTIARY CONTACT
-#Save subset of junctIons with different loop.
-#"""
-#junctionMotifs = [('',)]
-#receptorName = 'R1'
-#loopName     = 'badLoop'
-#helixName    = 'rigid'
-#for junctionMotif in junctionMotifs:
-#    helices = Helix(parameters.helixDict[helixName], junction.length).centerLocation()
-#    f, count = saveSet(junction, helices, helixName, receptorName, loopName, f, count)
-#
-#"""
-#JUNCTIONS IN ONE POSITION DIFFERENT TERTIARY CONTACT
-#Save subset of junctions with different receptors
-#"""
-#junctionMotifs = [('',)]
-#receptorNames = ['KL1', 'KL2']
-#loopName      = 'goodLoop'
-#helixName     = 'rigid'
-#for junctionMotif in junctionMotifs:
-#    for receptorName in receptorNames:
-#        helices = Helix(parameters.helixDict[helixName], junction.length).centerLocation()
-#        f, count = saveSet(junction, helices, helixName, receptorName, loopName, f, count)
 """
 6 DIFFERENT KINK TURNS  IN 5 positions 
 Save subset of junctions located in 'along' set
@@ -141,14 +107,14 @@ junctionMotifs = [('',)]
 
 
 junction = Junction(junctionMotifs[0])
-
+junction.motif = [('KT')]
 for KTname in KTnames:
     countAll = count + 1
     KTseq = KTMotifs[KTname]
     junction.sequences[0] = KTseq
     print(junction.sequences)    
     helices = Helix(parameters.KThelixDict[helixName],0 ).alongHelix()
-    f, count = saveSet(junction, helices, helixName, receptorName, loopName, f, count)
+    f, count = saveSet(junction, helices, helixName, receptorName, loopName, f,f2, count)
     #what is this count variable?
 """
 JUNCTIONS IN CENTRAL REGION
@@ -164,15 +130,16 @@ loopName     = 'goodLoop'
 helixName    = 'KThelix1'
 KTmotif_base = parameters.allKT_Names[1]
 junctionMotif = [('',)]
-for junctionMotif in junctionMotifs:
-    junction = Junction(junctionMotif)
+
+junction = Junction(junctionMotif[0])
     
 KTseq = KTMotifs[KTmotif_base]  
 junction.sequences[0] = KTseq
-        
+junction.motif =[('KT')]
+       
 # now save
 helices = Helix(parameters.KThelixDict[helixName], 0).centralRegion()
-f, count = saveSet(junction, helices, helixName, receptorName, loopName, f, count)
+f, count = saveSet(junction, helices, helixName, receptorName, loopName, f,f2, count)
 
 
 
@@ -180,4 +147,5 @@ f, count = saveSet(junction, helices, helixName, receptorName, loopName, f, coun
 
 # close
 f.close()
+f2.close()
 logfile.close()
