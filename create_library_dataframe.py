@@ -181,7 +181,7 @@ def saveSequences(names, junctionSequences, helixSequences, receptor,  loop, bas
             #should have done this with an array, can fix?
             lengths = {'len_h1s1': len(helixSequence['h1_side1']),'len_h2s1': len(helixSequence['h2_side1']), 'len_h2s2': len(helixSequence['h2_side2']),
             'len_h1s2': len(helixSequence['h1_side2']), 'len_js1': len(junctionSequence[0]), 'len_js2' : len(junctionSequence[1])}
-            total_length = len(helixSequence['h1_side1']) + len(helixSequence['h1_side2']) + junction.length
+            total_length = len(helixSequence['h1_side1']) + len(helixSequence['h2_side2']) + junction.length
             
             
             data = (sequence_i, '_'.join(junction.motif), names[2], names[1], names[0], junctionsequence_parse, helixsequence_parse, lengths['len_h1s1'],

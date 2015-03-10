@@ -21,7 +21,7 @@ class Parameters():
         where to save files
         """
         #self.wd = '/Users/Sarah/Dropbox/HJH_project/HJH_project/libraries/v1/'
-        self.wd = '/Users/nbisaria/Dropbox/HJH_project/libraries/NB/'
+        self.wd = '/Users/Sarah/Dropbox/HJH_project/HJH_project/libraries/v1_characterization'
     
         
         # tecto RNA parameters
