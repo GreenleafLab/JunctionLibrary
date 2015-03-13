@@ -8,17 +8,27 @@
 ##### IMPORT #####
 import numpy as np
 import globalvars
+import pandas as pd
 parameters = globalvars.Parameters()
 
 class Helix(object):
-    def __init__(self, helixSequence, junctionLength):
-        
+    def __init__(self, helixSequence, junctionLength, offset=None, totalLength=None):
+        # save sequece
         self.sequence = helixSequence
         if self.testHelix():
             print 'helix is good'
+        
+        # save effective length given junction length
         self.effectiveLength = len(helixSequence[0])-junctionLength
         
-    
+        # find helix sequence with junction length removed
+        if totalLength is None:  totalLength = self.effectiveLength
+        else: totalLength = totalLength - junctionLength
+        if offset is not None:
+            helixOneLength = self.convertOffsetToHelixOneLength(self.effectiveLength, offset)
+            self.split = self.formatHelix(helixSequence, totalLength, helixOneLength)
+        self.offset = offset
+        
     def testHelix(self):
         """
         Make sure the Helix is properly formatted
@@ -26,14 +36,22 @@ class Helix(object):
         sequence = self.sequence
         isHelixGood = True
         
-        if not isinstance(sequence, tuple):
-            print 'Check input: helix is not in tuple format.\n\tex: (\'AAAA\', \'TTTT\')'
-            isHelixGood = False
         if len(sequence[0]) != len(sequence[1]):
             print 'Check input: helix sides are not of equal length'
             isHelixGood = False
         return isHelixGood
+    
+    def convertOffsetToHelixOneLength(self, effectiveLength, offset):
+        return int(np.floor(effectiveLength/2.) + offset)
         
+    def formatHelix(self, sequence, totalLength, lengthOneHelix):
+        helixAll = pd.DataFrame('',columns=['side1', 'side2'], index=['before', 'after'])
+        helixAll.loc['before', 'side1'] = sequence.loc['side1'][:lengthOneHelix]
+        helixAll.loc['after', 'side2'] = sequence.loc['side2'][::-1][:lengthOneHelix][::-1]
+
+        helixAll.loc['after', 'side1'] = sequence.loc['side1'][::-1][:(totalLength-lengthOneHelix)][::-1]
+        helixAll.loc['before', 'side2'] = sequence.loc['side2'][:totalLength-lengthOneHelix]  
+        return helixAll.transpose()
 
     def formatHelices(self, totalLengths, lengthsOneHelix):
         """

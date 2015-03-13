@@ -8,17 +8,22 @@
 ##### IMPORT #####
 import numpy as np
 import itertools
+import pandas as pd
 
 ##### Define CLASSES #####
 
 
 class Junction(object):
-    def __init__(self, junctionMotif):
+    def __init__(self, junctionMotif=None, sequences=None):
         
-        self.motif = junctionMotif
-        if self.testJunction(): # is junction properly formatted?
-            self.sequences = self.mapJunctionToSequence()
-            self.length = self.findEffectiveJunctionLength()
+        if junctionMotif is not None:
+            self.motif = junctionMotif
+            if self.testJunction(): # is junction properly formatted?
+                self.sequences = self.mapJunctionToSequence()
+                self.length = self.findEffectiveJunctionLength(motif=junctionMotif)
+        if sequences is not None:
+            self.sequences = sequences
+        
         
     def testJunction(self):
         """
@@ -87,7 +92,7 @@ class Junction(object):
             possibleBases['side1'] = ['']*numberOfPossibilities
             possibleBases['side2'] = ['']*numberOfPossibilities
             
-        return possibleBases
+        return pd.DataFrame(possibleBases)
     
     def howManyPossibilities(self):
         """
@@ -117,14 +122,15 @@ class Junction(object):
             given possibile nucleotides for each junction side, what are all possible permutations of nucleotides?
             """
             possibleBases = self.mapSubmotifToNucleotide(submotif)
-            side1 = [''.join(result) for result in itertools.product(possibleBases['side1'], side1)]
-            side2 = [''.join(result[::-1]) for result in itertools.product(possibleBases['side2'], side2)]
+            side1 = pd.Series([''.join(result) for result in itertools.product(possibleBases['side1'], side1)])
+            side2 = pd.Series([''.join(result[::-1]) for result in itertools.product(possibleBases['side2'], side2)])
         
-        numberOfCombos = self.howManyPossibilities()       
-        junctionSequences = np.array(np.empty(numberOfCombos),
-                                     dtype={'names':('side1', 'side2'), 'formats':('S1000','S1000')})
-        junctionSequences['side1'] = side1
-        junctionSequences['side2'] = side2
+        numberOfCombos = self.howManyPossibilities()
+        junctionSequences = pd.concat([side1, side2], axis=1, keys=['side1', 'side2']).astype(str)
+        #junctionSequences = np.array(np.empty(numberOfCombos),
+        #                             dtype={'names':('side1', 'side2'), 'formats':('S1000','S1000')})
+        #junctionSequences['side1'] = side1
+        #junctionSequences['side2'] = side2
         
         # print
         print 'Number of possible combinations: %d'%(numberOfCombos)
@@ -134,16 +140,19 @@ class Junction(object):
         
         return junctionSequences
     
-    def findEffectiveJunctionLength(self):
+    def findEffectiveJunctionLength(self, motif=None, sequence=None):
         """
         Given a junction motif, how long does it count for?
         Mismatch is 1, BP is 1, bulge is 0
         """
-        motif = self.motif
         effectiveLength = 0
-        for submotif in motif:
-            if submotif == 'M' or submotif == 'W':
-                effectiveLength += 1
+        if motif is not None:
+            for submotif in motif:
+                if submotif == 'M' or submotif == 'W':
+                    effectiveLength += 1
+        if sequence is not None:
+            effectiveLength = np.min([len(sequence.loc[side]) for side in ['side1', 'side2']])
+            
         
         return effectiveLength
         
