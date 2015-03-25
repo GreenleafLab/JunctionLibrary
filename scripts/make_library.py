@@ -20,7 +20,6 @@ from operator import mul
 import subprocess
 
 # load custom libraries
-from create_library import threadTogether
 from hjh.helix import Helix
 from hjh.junction import Junction
 
@@ -29,8 +28,11 @@ from hjh.junction import Junction
 parser = argparse.ArgumentParser(description="script for making library")
 parser.add_argument('-map','--map_file', help='file that contains parameters to vary', required=True)
 parser.add_argument('-sub','--subset_number', help='maximum number of sequences per junction motif. Default is all possible ')
-parser.add_argument('-seq','--junction_sequences', help='overwrite the junction motifs given in map with particular sequenecs in this file')
+
 parser.add_argument('-par','--seq_params', help='location of seq_param file. Default is ~/JunctionLibrary/seq_params/seq_params.txt')
+parser.add_argument('-jun','--junction_sequences', help='overwrite the junction motifs given in map with particular sequenecs in this file')
+parser.add_argument('-ter','--tertiary_contacts', help='overwrite the tertiary contacts given in map with particular sequenecs in this file')
+parser.add_argument('-seq','--helix_sequences', help='overwrite the helices given in map with particular sequenecs in this file')
 parser.add_argument('-out','--out_file', help='file to save output')
 
 if not len(sys.argv) > 1:
@@ -56,6 +58,17 @@ def findInitialDistance(allSeqs, indx):
         pass
     print '%d\t%s\t%s\t%4.2f'%(allSeqs.loc[indx, 'offset'], allSeqs.loc[indx, 'junction_seq'], call, distance)
     return pd.Series([allSeqs.loc[indx, 'offset'], allSeqs.loc[indx, 'junction_seq'],distance, seq], index=['offset', 'junction_seq', 'distance', 'tecto_sequence'])
+
+def threadTogether(inside, outside):
+    """
+    Given a sequence 'inside' and a tuple 'outside' ('side1', 'side2'),
+    add  the sequences from 'outside' to either side of 'inside'.
+    
+    outside(side 1) + inside + outside(side 2)
+    """
+    
+    seq = (outside[0] + inside + outside[1])
+    return seq
 
 def findSequence(loop, helix, junction, receptor, base):
     sequence = loop
@@ -115,20 +128,18 @@ for i, x in enumerate(itertools.product(*[expt_params.loc[:,name].dropna() for n
         if x.junction == 'user_defined':    # user defined junctions can have any length- so it depends on sequence, not motif
             helix = Helix(seq_params.loc[('helix', x.helix)],
                           junction.findEffectiveJunctionLength(sequence=junction.sequences.loc[loc]),
-                          x.offset, int(x.length))
-        
-        x.loc['junction_seq'] = '_'.join(junction.sequences.loc[loc])
-        x.loc['helix_seq'] = '&'.join(['_'.join(helix.split.loc['side1']), '_'.join(helix.split.loc['side2'])])
-        
+                          x.offset, int(x.length))        
         sequence, colormap = findSequence(seq_params.loc[('loop', x.loop), 'loop'],
                                           helix,
-                                            junction.sequences.loc[loc],
-                                            seq_params.loc[('receptor', x.loc['receptor']), ['side1', 'side2']],
-                                            seq_params.loc[('base', x.loc['base']), ['side1', 'side2']])
-
+                                          junction.sequences.loc[loc],
+                                          seq_params.loc[('receptor', x.loc['receptor']), ['side1', 'side2']],
+                                          seq_params.loc[('base', x.loc['base']), ['side1', 'side2']])
+        x.loc['junction_seq'] = '_'.join(junction.sequences.loc[loc])
+        x.loc['helix_seq'] = '&'.join(['_'.join(helix.split.loc['side1']), '_'.join(helix.split.loc['side2'])])
         x.loc['tecto_sequence'] = sequence
-        x.loc['sequence']  = threadTogether(sequence, seq_params.loc[('adapters', x.adapters), ['side1', 'side2']])
+        x.loc['sequence']  = threadTogether(sequence, seq_params.loc[('adapters', x.adapters), ['side1', 'side2']]).replace('T', 'U')
         allSeqSub.loc[loc] = x
+        allSeqSub.loc[loc, 'junction'] = junction.sequences.loc[loc].name
         seq, ss = findSecondaryStructure(x)
         print 'java -cp %s fr.orsay.lri.varna.applications.VARNAcmd -sequenceDBN "%s" -structureDBN "%s" -colorMap "%s" -colorMapStyle blue -o %s'%(varnaScript, seq, ss, ';'.join(np.array(colormap, dtype=str)), 'test.png' )
     allSeqs = allSeqs.append(allSeqSub, ignore_index=True)
