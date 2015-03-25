@@ -59,23 +59,23 @@ class Junction(object):
             numberOfPossibilities = 12
             possibleBases = np.array(np.empty(numberOfPossibilities),
                                       dtype={'names':('side1', 'side2'), 'formats':('S1','S1')})
-            possibleBases['side1'] = ['A']*3 + ['U']*3 + ['G']*3 + ['C']*3
-            possibleBases['side2'] = ['A', 'G', 'C', 'U', 'G', 'C', 'A', 'U', 'G', 'A', 'U', 'C']
+            possibleBases['side1'] = ['A']*3 + ['T']*3 + ['G']*3 + ['C']*3
+            possibleBases['side2'] = ['A', 'G', 'C', 'T', 'G', 'C', 'A', 'T', 'G', 'A', 'T', 'C']
 
         elif submotif == 'W':
             # if watson crick, just list Watson crick bp
             numberOfPossibilities = 4
             possibleBases = np.array(np.empty(numberOfPossibilities),
                                       dtype={'names':('side1', 'side2'), 'formats':('S1','S1')})
-            possibleBases['side1'] = ['A', 'U', 'G', 'C']
-            possibleBases['side2'] = ['U', 'A', 'C', 'G']
+            possibleBases['side1'] = ['A', 'T', 'G', 'C']
+            possibleBases['side2'] = ['T', 'A', 'C', 'G']
         
         elif submotif == 'B1':
             # if bulge on side 1, side 1 is every base, opposite a blank
             numberOfPossibilities = 4
             possibleBases = np.array(np.empty(numberOfPossibilities),
                                     dtype={'names':('side1', 'side2'), 'formats':('S1','S1')})
-            possibleBases['side1'] = ['A', 'U', 'G', 'C']
+            possibleBases['side1'] = ['A', 'T', 'G', 'C']
             possibleBases['side2'] = ['']*numberOfPossibilities
             
         elif submotif == 'B2':
@@ -84,7 +84,7 @@ class Junction(object):
             possibleBases = np.array(np.empty(numberOfPossibilities),
                                     dtype={'names':('side1', 'side2'), 'formats':('S1','S1')})
             possibleBases['side1'] = ['']*numberOfPossibilities
-            possibleBases['side2'] = ['A', 'U', 'G', 'C']
+            possibleBases['side2'] = ['A', 'T', 'G', 'C']
         
         elif submotif == 'GC':
             # if bulge on side 2, side 2 is every base, opposite a blank 
@@ -108,14 +108,14 @@ class Junction(object):
             possibleBases = np.array(np.empty(numberOfPossibilities),
                                     dtype={'names':('side1', 'side2'), 'formats':('S1','S1')})
             possibleBases['side1'] = ['A']
-            possibleBases['side2'] = ['U']
+            possibleBases['side2'] = ['T']
 
         elif submotif == 'UA':
             # if bulge on side 2, side 2 is every base, opposite a blank 
             numberOfPossibilities = 1
             possibleBases = np.array(np.empty(numberOfPossibilities),
                                     dtype={'names':('side1', 'side2'), 'formats':('S1','S1')})
-            possibleBases['side1'] = ['U']
+            possibleBases['side1'] = ['T']
             possibleBases['side2'] = ['A']
         
         elif submotif == '':
@@ -131,8 +131,8 @@ class Junction(object):
             numberOfPossibilities = 16
             possibleBases = np.array(np.empty(numberOfPossibilities),
                                     dtype={'names':('side1', 'side2'), 'formats':('S1','S1')})
-            possibleBases['side1'] = ['A']*4 + ['U']*4 + ['G']*4 + ['C']*4
-            possibleBases['side2'] = ['A', 'G', 'C', 'U',  'A', 'G', 'C', 'U', 'A', 'G', 'C', 'U','A', 'G', 'C', 'U',]
+            possibleBases['side1'] = ['A']*4 + ['T']*4 + ['G']*4 + ['C']*4
+            possibleBases['side2'] = ['A', 'G', 'C', 'T',  'A', 'G', 'C', 'T', 'A', 'G', 'C', 'T','A', 'G', 'C', 'T',]
             
         return pd.DataFrame(possibleBases)
     
