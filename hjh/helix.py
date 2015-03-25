@@ -15,8 +15,7 @@ class Helix(object):
     def __init__(self, helixSequence, junctionLength, offset=None, totalLength=None):
         # save sequece
         self.sequence = helixSequence
-        if self.testHelix():
-            print 'helix is good'
+        self.testHelix()
         
         # save effective length given junction length
         self.effectiveLength = len(helixSequence[0])-junctionLength
