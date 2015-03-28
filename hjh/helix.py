@@ -16,16 +16,18 @@ class Helix(object):
         # save sequece
         self.sequence = helixSequence
         self.testHelix()
-        
-        # save effective length given junction length
-        self.effectiveLength = len(helixSequence[0])-junctionLength
-        
+
+
         # find helix sequence with junction length removed
-        if totalLength is None:  totalLength = self.effectiveLength
-        else: totalLength = totalLength - junctionLength
+        if totalLength is None:
+            effectiveLength = len(helixSequence[0])-junctionLength
+        else:
+            effectiveLength = totalLength - junctionLength
+        self.effectiveLength = effectiveLength
+        
         if offset is not None:
-            helixOneLength = self.convertOffsetToHelixOneLength(self.effectiveLength, offset)
-            self.split = self.formatHelix(helixSequence, totalLength, helixOneLength)
+            helixOneLength = self.convertOffsetToHelixOneLength(effectiveLength, offset)
+            self.split = self.formatHelix(helixSequence, effectiveLength, helixOneLength)
         self.offset = offset
         
     def testHelix(self):
