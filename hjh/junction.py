@@ -59,23 +59,23 @@ class Junction(object):
             numberOfPossibilities = 12
             possibleBases = np.array(np.empty(numberOfPossibilities),
                                       dtype={'names':('side1', 'side2'), 'formats':('S1','S1')})
-            possibleBases['side1'] = ['A']*3 + ['T']*3 + ['G']*3 + ['C']*3
-            possibleBases['side2'] = ['A', 'G', 'C', 'T', 'G', 'C', 'A', 'T', 'G', 'A', 'T', 'C']
+            possibleBases['side1'] = ['A']*3 + ['U']*3 + ['G']*3 + ['C']*3
+            possibleBases['side2'] = ['A', 'G', 'C', 'U', 'G', 'C', 'A', 'U', 'G', 'A', 'U', 'C']
 
         elif submotif == 'W':
             # if watson crick, just list Watson crick bp
             numberOfPossibilities = 4
             possibleBases = np.array(np.empty(numberOfPossibilities),
                                       dtype={'names':('side1', 'side2'), 'formats':('S1','S1')})
-            possibleBases['side1'] = ['A', 'T', 'G', 'C']
-            possibleBases['side2'] = ['T', 'A', 'C', 'G']
+            possibleBases['side1'] = ['A', 'U', 'G', 'C']
+            possibleBases['side2'] = ['U', 'A', 'C', 'G']
         
         elif submotif == 'B1':
             # if bulge on side 1, side 1 is every base, opposite a blank
             numberOfPossibilities = 4
             possibleBases = np.array(np.empty(numberOfPossibilities),
                                     dtype={'names':('side1', 'side2'), 'formats':('S1','S1')})
-            possibleBases['side1'] = ['A', 'T', 'G', 'C']
+            possibleBases['side1'] = ['A', 'U', 'G', 'C']
             possibleBases['side2'] = ['']*numberOfPossibilities
             
         elif submotif == 'B2':
@@ -84,7 +84,7 @@ class Junction(object):
             possibleBases = np.array(np.empty(numberOfPossibilities),
                                     dtype={'names':('side1', 'side2'), 'formats':('S1','S1')})
             possibleBases['side1'] = ['']*numberOfPossibilities
-            possibleBases['side2'] = ['A', 'T', 'G', 'C']
+            possibleBases['side2'] = ['A', 'U', 'G', 'C']
         
         elif submotif == 'GC':
             # if bulge on side 2, side 2 is every base, opposite a blank 
@@ -108,14 +108,14 @@ class Junction(object):
             possibleBases = np.array(np.empty(numberOfPossibilities),
                                     dtype={'names':('side1', 'side2'), 'formats':('S1','S1')})
             possibleBases['side1'] = ['A']
-            possibleBases['side2'] = ['T']
+            possibleBases['side2'] = ['U']
 
         elif submotif == 'UA':
             # if bulge on side 2, side 2 is every base, opposite a blank 
             numberOfPossibilities = 1
             possibleBases = np.array(np.empty(numberOfPossibilities),
                                     dtype={'names':('side1', 'side2'), 'formats':('S1','S1')})
-            possibleBases['side1'] = ['T']
+            possibleBases['side1'] = ['U']
             possibleBases['side2'] = ['A']
         
         elif submotif == '':
@@ -131,8 +131,8 @@ class Junction(object):
             numberOfPossibilities = 16
             possibleBases = np.array(np.empty(numberOfPossibilities),
                                     dtype={'names':('side1', 'side2'), 'formats':('S1','S1')})
-            possibleBases['side1'] = ['A']*4 + ['T']*4 + ['G']*4 + ['C']*4
-            possibleBases['side2'] = ['A', 'G', 'C', 'T',  'A', 'G', 'C', 'T', 'A', 'G', 'C', 'T','A', 'G', 'C', 'T',]
+            possibleBases['side1'] = ['A']*4 + ['U']*4 + ['G']*4 + ['C']*4
+            possibleBases['side2'] = ['A', 'G', 'C', 'U',  'A', 'G', 'C', 'U', 'A', 'G', 'C', 'U','A', 'G', 'C', 'U',]
             
         return pd.DataFrame(possibleBases)
     
@@ -177,10 +177,10 @@ class Junction(object):
         #junctionSequences['side2'] = side2
         
         # print
-        print 'Number of possible combinations: %d'%(numberOfCombos)
-        print 'First 16 combos: '
-        for i in range(min(16, numberOfCombos)):
-            print '%s\t%s'%(junctionSequences['side1'][i], junctionSequences['side2'][i])
+        #print 'Number of possible combinations: %d'%(numberOfCombos)
+        #print 'First 16 combos: '
+        #for i in range(min(16, numberOfCombos)):
+        #    print '%s\t%s'%(junctionSequences['side1'][i], junctionSequences['side2'][i])
         
         return junctionSequences
     
@@ -192,8 +192,10 @@ class Junction(object):
         effectiveLength = 0
         if motif is not None:
             for submotif in motif:
-                if submotif == 'M' or submotif == 'W':
+                if submotif == 'M' or submotif == 'W' or submotif == 'N' or submotif == 'UA' or submotif == 'AU' or submotif =='GC' or submotif =='CG':
                     effectiveLength += 1
+        
+        
         if sequence is not None:
             effectiveLength = np.min([len(sequence.loc[side]) for side in ['side1', 'side2']])
             
