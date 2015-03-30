@@ -3,6 +3,8 @@ import os
 import subprocess
 import numpy as np
 
+from hjh.helix import Helix
+
 class TectoSeq():
     def __init__(self, seq_params,  params=None, helix=None, junction=None, sequence=None, reverse_junction=None):
 
@@ -78,14 +80,16 @@ class TectoSeq():
     
     def returnInfo(self):
         
-        params = pd.Series(index = ['junction_seq', 'helix_one_length', 'helix_seq', 'tecto_sequence', 'sequence'] )
-        params.loc['junction_seq'] = '_'.join(self.junction.loc[['side1', 'side2']])
-        params.loc['junction_seq_noflank'] = '_'.join([self.junction.loc['side1'][1:-1], self.junction.loc['side2'][1:-1]])
-        params.loc['helix_seq'] = '&'.join(['_'.join(self.helix.split.loc['side1']), '_'.join(self.helix.split.loc['side2'])])
-        params.loc['tecto_sequence'] = self.makeTecto()
-        params.loc['sequence']  = self.threadTogether(params.loc['tecto_sequence'], self.adapters.loc[['side1', 'side2']]).replace('U', 'T')
-        
-        params.loc['helix_one_length'] = len(self.helix.split.loc['side1', 'before'])
+        params = pd.Series(index = ['junction_seq', 'helix_one_length', 'helix_seq', 'tecto_sequence', 'sequence', 'no_flank'] )
+        try:
+            params.loc['junction_seq'] = '_'.join(self.junction.loc[['side1', 'side2']])
+            params.loc['junction_seq_noflank'] = '_'.join([self.junction.loc['side1'][1:-1], self.junction.loc['side2'][1:-1]])
+            params.loc['helix_seq'] = '&'.join(['_'.join(self.helix.split.loc['side1']), '_'.join(self.helix.split.loc['side2'])])
+            params.loc['tecto_sequence'] = self.makeTecto()
+            params.loc['sequence']  = self.threadTogether(params.loc['tecto_sequence'], self.adapters.loc[['side1', 'side2']]).replace('U', 'T')
+            
+            params.loc['helix_one_length'] = len(self.helix.split.loc['side1', 'before'])
+        except AttributeError: pass
         return params
     
     def isSecondaryStructureCorrect(self, ss=None):
@@ -134,6 +138,19 @@ class TectoSeq():
             
         return isCorrect, junctionSS, ''.join(ss)
 
+def findTecto(params, junction, seq_params, locs):
+    cols = TectoSeq(seq_params, params).params.index
+    allSeqSub = pd.DataFrame(index=locs, columns=cols)
+    for loc in locs:
+        helix = Helix(seq_params.loc[('helix', params.helix)],
+                      junction.findEffectiveJunctionLength(sequence=junction.sequences.loc[loc]),
+                      params.offset, int(params.length))
+                
+        tectoSeq = TectoSeq(seq_params, params, helix, junction.sequences.loc[loc])
+        allSeqSub.loc[loc] = tectoSeq.params
+        allSeqSub.loc[loc, 'tecto_object'] = tectoSeq
+    return allSeqSub
+
 def makeFasta(tectoSeqs, outputFile):
     f = open(outputFile, 'w')
     for line in tectoSeqs.index:
@@ -152,3 +169,12 @@ def getAllSecondaryStructures(tectoSeqs):
         indices[i] = line.split('\n')[0]
         secondaryStructures[i] = line.split()[2]
     return pd.Series(secondaryStructures, index=indices )
+
+def getSecondaryStructureMultiprocess(allSeqSub):
+    allSeqSub.loc[:, 'ss_correct'] = False
+    allSeqSub.loc[:, 'junction_SS'] = ''
+    for loc in allSeqSub.index:
+        ss_correct, junctionSS, ss = allSeqSub.loc[loc, 'tecto_object'].isSecondaryStructureCorrect(ss=allSeqSub.loc[loc, 'ss'])
+        allSeqSub.loc[loc, 'ss_correct'] = ss_correct
+        allSeqSub.loc[loc, 'junction_SS'] = junctionSS
+    return allSeqSub
