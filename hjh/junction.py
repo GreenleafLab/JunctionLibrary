@@ -197,6 +197,8 @@ class Junction(object):
         
         
         if sequence is not None:
+            for side in ['side1', 'side2']: 
+                if str(sequence.loc[side]) == "nan": sequence.loc[side] = ''
             effectiveLength = np.min([len(sequence.loc[side]) for side in ['side1', 'side2']])
             
         
