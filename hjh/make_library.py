@@ -22,6 +22,9 @@ import cPickle as pickle
 from matplotlib import gridspec
 import matplotlib.pyplot as plt
 import seaborn as sns
+import functools
+import multiprocessing
+
 # load custom libraries
 import hjh.tecto_assemble
 from hjh.helix import Helix
@@ -34,7 +37,7 @@ parser = argparse.ArgumentParser(description="script for making library")
 parser.add_argument('-map','--map_file', help='file that contains parameters to vary', required=True)
 parser.add_argument('-max','--max_number', help='maximum number of seuqences per juncito motif', type=int)
 parser.add_argument('-par','--seq_params_file', help='location of seq_param file. Default is ~/JunctionLibrary/seq_params/seq_params.txt')
-parser.add_argument('-jun','--junction_sequences', help='overwrite the junction motifs given in map with particular sequenecs in this file')
+parser.add_argument('-jun','--junction_sequence_file', help='overwrite the junction motifs given in map with particular sequenecs in this file')
 
 parser.add_argument('-out','--out_file', help='file to save output')
 
@@ -60,7 +63,7 @@ def findInitialDistance(allSeqs, indx):
     print '%d\t%s\t%s\t%4.2f'%(allSeqs.loc[indx, 'offset'], allSeqs.loc[indx, 'junction_seq'], call, distance)
     return pd.Series([allSeqs.loc[indx, 'offset'], allSeqs.loc[indx, 'junction_seq'],distance, seq], index=['offset', 'junction_seq', 'distance', 'tecto_sequence'])
 
-    
+
 
 #parse command line arguments
 args = parser.parse_args()
@@ -71,43 +74,39 @@ if args.seq_params_file is None:
 # load file setting parameters like loop and receptor sequences
 expt_params = pd.read_table(args.map_file)
 seq_params    = pd.read_table(args.seq_params_file , index_col=[0,1])
+numCores = 20
 
 # if seq file is defined, replace junction motifs with this
-if args.junction_sequences is not None:
-    expt_params.loc[:, 'junction'] = ['user_defined'] +[np.nan]*(len(expt_params)-1)
-
-# either load all sequences r
+if args.junction_sequence_file is not None:
+    expt_params.loc[:, 'junction'] = ['defunct'] +[np.nan]*(len(expt_params)-1)
+    junctionSeqs = pd.read_table(args.junction_sequence_file, index_col=0)
+else:
+    junctionSeqs = pd.DataFrame(columns=['side1', 'side2'])
+    for motif in expt_params.loc[:, 'junction']:
+        junctionSeqs = junctionSeqs.append(Junction(tuple(motif.split(','))).sequences, ignore_index=True)
+    expt_params.loc[:, 'junction'] = ['defunct'] +[np.nan]*(len(expt_params)-1)
+junction = Junction(sequences=junctionSeqs.loc[:, ['side1', 'side2']])
 
 # iterate through all
-cols = expt_params.columns.tolist()+['junction_seq', 'junction_seq_noflank', 'helix_seq','tecto_sequence', 'sequence', 'tecto_object']
+cols = TectoSeq(seq_params, expt_params.loc[0]).params.index
 numToLog =  np.product((~expt_params.isnull()).sum().values)
 allSeqs = pd.DataFrame(columns=cols)
 logSeqs = pd.DataFrame(index=np.arange(numToLog), columns=expt_params.columns.tolist()+['number'])
 
 # initiate structure to store, per motif, and many contexts, whether it could form
-
 with open(args.out_file + '.pkl', 'wb') as output:
     count = 0
     for i, params in enumerate(itertools.product(*[expt_params.loc[:,name].dropna() for name in expt_params])):
-        
+        pass
         params = pd.Series(params, index=expt_params.columns.tolist())
-        # if a particular junction file was specified, replace junctions in map file with those
-        if params.junction == 'user_defined':
-            sequences = pd.read_table(args.junction_sequences, index_col=0).loc[:,['side1', 'side2']]
-            junction = Junction(sequences=sequences)
-        
-        # if it wasn't specified, we can assume just one helix split per junction and can just do this once, here
-        else:                
-            junction = Junction(tuple(params.junction.split(',')))
-            helix = Helix(seq_params.loc[('helix', params.helix)], junction.length, params.offset, int(params.length))
-                
+      
         # if up, junction remains the same. else switch sides
         if params.side == 'up':
             pass
         elif params.side == 'down':
             junction.sequences = pd.DataFrame(junction.sequences.loc[:, ['side2', 'side1']].values,
                                                          columns=['side1', 'side2'],
-                                                         index=['%d.s'%name for name in junction.sequences.index])
+                                                         index=[-name for name in junction.sequences.index])
         
         # initialize saving
         allSeqSub = pd.DataFrame(index=junction.sequences.index, columns=cols)
@@ -115,51 +114,49 @@ with open(args.out_file + '.pkl', 'wb') as output:
         logSeqs.loc[i, 'number'] = len(junction.sequences)
         print '%4.1f%% complete'%(100*i/float(numToLog))
         # cycle through junction sequences
-        for loc in junction.sequences.index:
-            
-            # user defined junctions can have any length- so helix splitting depends on sequence, not motif
-            if params.junction == 'user_defined':
-                helix = Helix(seq_params.loc[('helix', x.helix)],
-                              junction.findEffectiveJunctionLength(sequence=junction.sequences.loc[loc]),
-                              params.offset, int(params.length))
-            
-            tectoSeq = TectoSeq(seq_params, params, helix, junction.sequences.loc[loc])
-            pickle.dump(tectoSeq, output, pickle.HIGHEST_PROTOCOL)
-            allSeqSub.loc[loc] = tectoSeq.params
-
-            allSeqSub.loc[loc, 'tecto_object'] = tectoSeq
-            #tectoSeqs[count] = tectoSeq; count+=1
-            #tectoSeqs[junction.motif[0]][junction.motif[-1]].append(tectoSeq)
-        allSeqs = allSeqs.append(allSeqSub, ignore_index=True)
+        f = functools.partial(hjh.tecto_assemble.findTecto, params, junction, seq_params)
+        workerPool = multiprocessing.Pool(processes=numCores)
+        allSeqSub = workerPool.map(f, np.array_split(junction.sequences.index.tolist(), numCores))
+        workerPool.close(); workerPool.join()
         
+        allSeqs = allSeqs.append(pd.concat(allSeqSub), ignore_index=True)
+
 # check if successful secondary structure        
 allSeqs.loc[:, 'ss'] = hjh.tecto_assemble.getAllSecondaryStructures(allSeqs.loc[:, 'tecto_sequence'])
-allSeqs.loc[:, 'ss_correct'] = False
-allSeqs.loc[:, 'junction_SS'] = ''
-for loc in allSeqs.index:
-    ss_correct, junctionSS, ss = allSeqs.loc[loc, 'tecto_object'].isSecondaryStructureCorrect(ss=allSeqs.loc[loc, 'ss'])
-    allSeqs.loc[loc, 'ss_correct'] = ss_correct
-    allSeqs.loc[loc, 'junction_SS'] = junctionSS
-    
+
+workerPool = multiprocessing.Pool(processes=numCores)
+indices = np.array_split(allSeqs.index.tolist(), numCores)
+allSeqSub = workerPool.map(hjh.tecto_assemble.getSecondaryStructureMultiprocess,
+                           [allSeqs.loc[index] for index in indices])
+workerPool.close(); workerPool.join()
+
+allSeqs = pd.concat(allSeqSub) 
 allSeqs.drop(['tecto_object'], axis=1).to_csv(args.out_file+'.txt', sep='\t')
 
+
+
 #check if any module was successful
-iterables = [['GC', 'CG', 'UA', 'AU'], ['GC', 'CG', 'UA', 'AU'], expt_params.length.dropna(), expt_params.offset.dropna().values, expt_params.side.dropna().values]
-index = pd.MultiIndex.from_product(iterables, names=['flank1', 'flank2', 'length', 'offset', 'side'])
-allsuccess = pd.DataFrame(index = np.unique(allSeqs.loc[allSeqs.side=='up', 'junction_seq_noflank']), columns=index)
+allSeqs.loc[:, 'no_flank'] = ['_'.join([allSeqs.loc[loc, 'tecto_object'].junction['side1'][2:-2],
+                                       allSeqs.loc[loc, 'tecto_object'].junction['side2'][2:-2]]) for loc in allSeqs.index] 
+flanks = np.unique([allSeqs.loc[loc, 'tecto_object'].junction['side1'][:2] + allSeqs.loc[loc, 'tecto_object'].junction['side1'][-2:] for loc in allSeqs.index])
+
+iterables = [['A_', 'G_', 'C_', 'U_', '_'], expt_params.length.dropna(), expt_params.offset.dropna().values, expt_params.side.dropna().values]
+index = pd.MultiIndex.from_product(iterables, names=['no_flank', 'length', 'offset', 'side'])
+allsuccess = pd.DataFrame(index=flanks, columns=index)
 
 for loc in allSeqs.index:
-    index = allSeqs.loc[loc, 'junction_seq_noflank']
-    index = allSeqs.loc[loc, 'junction_seq_noflank']
+    if loc%10 == 0: print loc
+    index = allSeqs.loc[loc, 'tecto_object'].junction['side1'][:2] + allSeqs.loc[loc, 'tecto_object'].junction['side1'][-2:]
+    no_flank = allSeqs.loc[loc, 'no_flank']
     if allSeqs.loc[loc, 'side'] == 'down':
-        index = index[::-1]
-    columns = (allSeqs.loc[loc, 'junction'].split(',')[0],
-               allSeqs.loc[loc, 'junction'].split(',')[-1],
+        no_flank = no_flank[::-1]
+    columns = (no_flank,
                allSeqs.loc[loc, 'length'],
                allSeqs.loc[loc, 'offset'],
                allSeqs.loc[loc, 'side'])
     allsuccess.loc[index, columns] = allSeqs.loc[loc, 'ss_correct']
-    
+sys.exit()
+
 worksInAll = pd.DataFrame(index = ['_'.join(x) for x in itertools.product(['GC', 'CG', 'UA', 'AU'], ['GC', 'CG', 'UA', 'AU'])],
                           columns=[allsuccess.index.tolist()])
 for flank1, flank2 in itertools.product(['GC', 'CG', 'UA', 'AU'], ['GC', 'CG', 'UA', 'AU']):
@@ -179,7 +176,10 @@ for i, ind in enumerate(inds):
 sys.exit()
 
 # plot somehow
-
+plt.figure(figsize=(6,10))
+sns.heatmap(allsuccess.astype(int), square=True,
+                    
+                    cbar=False,)
 
 
 
