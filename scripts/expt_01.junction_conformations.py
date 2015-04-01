@@ -6,7 +6,6 @@ import hjh.mutations
 from hjh.junction import Junction
 import numpy as np
 
-
 # functions
 def getAllJunctionSeqs():
     # save junctions : first B1 junctions
@@ -118,7 +117,7 @@ if __name__ == '__main__':
     # make map files
     lengths = [8, 9, 10, 11]
     offsetsPerLength = {8:[0], 9:[-1,0,1], 10:[-1,0,1], 11:[0] }
-    
+    filenames = {}
     num_lengths = len(lengths)
     expt_map_constant = pd.Series(index = ['helix','junction','receptor','loop', 'base',   'adapters'],
                                   data  = ['wc',   'defunct', '11nt',    'GGAA', 'normal', 'truseq'], dtype=str)
@@ -133,11 +132,12 @@ if __name__ == '__main__':
         expt_map.loc[0, 'length'] = length
         expt_map.loc[np.arange(len(offsets)), 'offset'] = offsets
         expt_map.loc[np.arange(len(sides)), 'side'] = sides
-    
+        filenames[length] = os.path.join(saveDir, 'expt.length_%d.map'%length)
+        expt_map.to_csv(filenames[length], index=False, sep='\t')
+        
     for length in lengths:
-        filename = os.path.join(saveDir, 'expt.length_%d.map'%length)
-        expt_map.to_csv(filename, index=False, sep='\t')
-        print "%%run ~/JunctionLibrary/hjh/make_library.py -map %s -jun %s -out %s"%(filename,
+
+        print "%%run ~/JunctionLibrary/hjh/make_library.py -map %s -jun %s -out %s"%(filenames[length],
                                                                                      os.path.join(saveDir, 'all.junctions_to_compare.junctions'),
                                                                                      os.path.join(saveDir, 'all.junctions_to_compare.length_%d'%length))
         
