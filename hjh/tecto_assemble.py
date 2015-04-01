@@ -92,8 +92,10 @@ class TectoSeq():
         except AttributeError: pass
         return params
     
-    def isSecondaryStructureCorrect(self, ss=None):
+    def isSecondaryStructureCorrect(self, ss=None, numberFlankingBases=None):
         regions = self.getRegions()
+        if numberFlankingBases is None:
+            numberFlankingBases = 1
         if ss is None:
             seq, ss = self.findSecondaryStructure()
         ss = pd.Series(list(ss), dtype=str)
@@ -109,32 +111,34 @@ class TectoSeq():
         isCorrect = True
         # base should be all base paired
         if ''.join(ss.loc[regions == 'base']) == expectedSecondaryStructure['base']:
-            print 'base region ok: %s'%''.join(ss.loc[regions == 'base'])
+            pass
         else:
             isCorrect = False
             print '\tissue with base region. Expected/actual: %s\t%s'%(expectedSecondaryStructure['base'], ''.join(ss.loc[regions == 'base']) )
         
         # receptor: assume tetraloop receptor
         if ''.join(ss.loc[regions == 'receptor']) == expectedSecondaryStructure['receptor']:
-            print 'receptor region ok: %s'%''.join(ss.loc[regions == 'receptor'])
+            pass
         else:
             isCorrect = False
             print '\tissue with receptor region. Is it 11nt receptor? Expected/actual: %s\t%s'%(expectedSecondaryStructure['receptor'], ''.join(ss.loc[regions == 'receptor']))
             
         # receptor: assume tetraloop receptor
         if helixSS == expectedSecondaryStructure['helix']:
-            print 'helix region ok: %s'%helixSS
+            pass
         else:
             isCorrect = False
             print '\tissue with helix region. Expected:/actual %s\t%s'%(expectedSecondaryStructure['helix'], helixSS)
         
         # print junction secondary structure
         junctionSS = ''.join(ss.loc[regions == 'junction'])
-        if junctionSS[0] == '(' and junctionSS[-1] == ')' and junctionSS.find('()') != -1:
-            print 'junction region probably ok: %s'%junctionSS
+        if (junctionSS[:numberFlankingBases]  == ''.join(['(']*numberFlankingBases) and
+            junctionSS[-numberFlankingBases:] == ''.join([')']*numberFlankingBases) and
+            junctionSS.find(''.join(['(']*numberFlankingBases) + ''.join([')']*numberFlankingBases)) != -1):
+            pass
         else:
             isCorrect = False
-            print '\tissue with junction region. Expected:/actual %s\t%s'%('(*()*)', junctionSS)
+            print '\tissue with junction region. Expected:/actual %s*()*%s\t%s'%(''.join(['(']*numberFlankingBases), ''.join([')']*numberFlankingBases), junctionSS)
             
         return isCorrect, junctionSS, ''.join(ss)
 
@@ -174,7 +178,7 @@ def getSecondaryStructureMultiprocess(allSeqSub):
     allSeqSub.loc[:, 'ss_correct'] = False
     allSeqSub.loc[:, 'junction_SS'] = ''
     for loc in allSeqSub.index:
-        ss_correct, junctionSS, ss = allSeqSub.loc[loc, 'tecto_object'].isSecondaryStructureCorrect(ss=allSeqSub.loc[loc, 'ss'])
+        ss_correct, junctionSS, ss = allSeqSub.loc[loc, 'tecto_object'].isSecondaryStructureCorrect(ss=allSeqSub.loc[loc, 'ss'], numberFlankingBases=allSeqSub.loc[loc, 'numberFlanking'],)
         allSeqSub.loc[loc, 'ss_correct'] = ss_correct
         allSeqSub.loc[loc, 'junction_SS'] = junctionSS
     return allSeqSub
