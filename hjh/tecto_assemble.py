@@ -80,14 +80,15 @@ class TectoSeq():
     
     def returnInfo(self):
         
-        params = pd.Series(index = ['junction_seq', 'helix_one_length', 'helix_seq', 'tecto_sequence', 'sequence', 'no_flank'] )
+        params = pd.Series(index = ['junction_seq', 'n_flank', 'no_flank', 'flank', 'helix_one_length', 'helix_seq', 'tecto_sequence', 'sequence'] )
         try:
             params.loc['junction_seq'] = '_'.join(self.junction.loc[['side1', 'side2']])
-            params.loc['junction_seq_noflank'] = '_'.join([self.junction.loc['side1'][1:-1], self.junction.loc['side2'][1:-1]])
+            params.loc['n_flank'] = self.junction.loc['n_flank']
             params.loc['helix_seq'] = '&'.join(['_'.join(self.helix.split.loc['side1']), '_'.join(self.helix.split.loc['side2'])])
             params.loc['tecto_sequence'] = self.makeTecto()
             params.loc['sequence']  = self.threadTogether(params.loc['tecto_sequence'], self.adapters.loc[['side1', 'side2']]).replace('U', 'T')
-            
+            params.loc['no_flank'] = '_'.join([self.junction.loc[side][params.loc['n_flank']:-params.loc['n_flank']] for side in ['side1', 'side2']])
+            params.loc['flank'] = ''.join([self.junction.loc['side1'][:params.loc['n_flank']], self.junction.loc['side1'][-params.loc['n_flank']:]])
             params.loc['helix_one_length'] = len(self.helix.split.loc['side1', 'before'])
         except AttributeError: pass
         return params
@@ -175,10 +176,12 @@ def getAllSecondaryStructures(tectoSeqs):
     return pd.Series(secondaryStructures, index=indices )
 
 def getSecondaryStructureMultiprocess(allSeqSub):
+
     allSeqSub.loc[:, 'ss_correct'] = False
     allSeqSub.loc[:, 'junction_SS'] = ''
     for loc in allSeqSub.index:
-        ss_correct, junctionSS, ss = allSeqSub.loc[loc, 'tecto_object'].isSecondaryStructureCorrect(ss=allSeqSub.loc[loc, 'ss'], numberFlankingBases=allSeqSub.loc[loc, 'numberFlanking'],)
+        ss_correct, junctionSS, ss = allSeqSub.loc[loc, 'tecto_object'].isSecondaryStructureCorrect(ss=allSeqSub.loc[loc, 'ss'], numberFlankingBases=allSeqSub.loc[loc, 'n_flank'],)
         allSeqSub.loc[loc, 'ss_correct'] = ss_correct
         allSeqSub.loc[loc, 'junction_SS'] = junctionSS
+    
     return allSeqSub

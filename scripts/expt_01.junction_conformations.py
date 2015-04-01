@@ -107,7 +107,7 @@ if __name__ == '__main__':
     
     # get sequences
     junctionSeqs = getAllJunctionSeqs()
-    junctionSeqs.to_csv(os.path.join(saveDir, 'all.junctions_to_compare.junctions'), index=True)
+    junctionSeqs.to_csv(os.path.join(saveDir, 'all.junctions_to_compare.junctions'), sep='\t', index=True)
     
     # make map files
     lengths = [8, 9, 10, 11]
@@ -131,7 +131,9 @@ if __name__ == '__main__':
     for length in lengths:
         filename = os.path.join(saveDir, 'expt.length_%d.map'%length)
         expt_map.to_csv(filename, index=False, sep='\t')
-        print "%%run ~/JunctionLibrary/hjh/make_library.py -map %s -jun %s"%(filename, os.path.join(saveDir, 'all.junctions_to_compare.junctions'))
+        print "%%run ~/JunctionLibrary/hjh/make_library.py -map %s -jun %s -out %s"%(filename,
+                                                                                     os.path.join(saveDir, 'all.junctions_to_compare.junctions'),
+                                                                                     os.path.join(saveDir, 'all.junctions_to_compare.length_%d'%length))
         
 
 # make other parameters

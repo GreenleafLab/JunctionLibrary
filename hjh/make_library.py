@@ -83,7 +83,7 @@ numCores = 20
 # if seq file is defined, replace junction motifs with this
 if args.junction_sequence_file is not None:
     expt_params.loc[:, 'junction'] = ['defunct'] +[np.nan]*(len(expt_params)-1)
-    junctionSeqs = pd.read_table(args.junction_sequence_file, index_col=0)
+    junctionSeqs = pd.read_table(args.junction_sequence_file, names=['junction', 'flank', 'index', 'side1', 'side2', 'n_flank'], header=0)
 else:
     junctionSeqs = pd.DataFrame(columns=['side1', 'side2'])
     for motif in expt_params.loc[:, 'junction']:
@@ -112,12 +112,15 @@ with open(args.out_file + '.pkl', 'wb') as output:
             junction.sequences = pd.DataFrame(junction.sequences.loc[:, ['side2', 'side1']].values,
                                                          columns=['side1', 'side2'],
                                                          index=[-name for name in junction.sequences.index])
+        # if you want to save n_flank
+        junction.sequences.loc[:, 'n_flank'] = junctionSeqs.loc[:, 'n_flank'].values
         
         # initialize saving
         allSeqSub = pd.DataFrame(index=junction.sequences.index, columns=cols)
         logSeqs.loc[i] = params
         logSeqs.loc[i, 'number'] = len(junction.sequences)
         print '%4.1f%% complete'%(100*i/float(numToLog))
+        
         # cycle through junction sequences
         f = functools.partial(hjh.tecto_assemble.findTecto, params, junction, seq_params)
         workerPool = multiprocessing.Pool(processes=numCores)
@@ -125,23 +128,13 @@ with open(args.out_file + '.pkl', 'wb') as output:
         workerPool.close(); workerPool.join()
         
         allSeqs = allSeqs.append(pd.concat(allSeqSub), ignore_index=True)
-
+        allSeqs.loc[:, 'junction'] = junctionSeqs.loc[:, 'junction']
+        
 # check if successful secondary structure        
 allSeqs.loc[:, 'ss'] = hjh.tecto_assemble.getAllSecondaryStructures(allSeqs.loc[:, 'tecto_sequence'])
+allSeqs.drop(['tecto_object'], axis=1).to_csv(args.out_file+'.txt', sep='\t')
 
 #check if any module was successful
-numberFlankingBasepairs = 2
-allSeqs.loc[:, 'numberFlanking'] = numberFlankingBasepairs
-allSeqs.loc[:, 'no_flank'] = ['_'.join([allSeqs.loc[loc, 'tecto_object'].junction['side1'][numberFlankingBasepairs:-numberFlankingBasepairs],
-                                       allSeqs.loc[loc, 'tecto_object'].junction['side2'][numberFlankingBasepairs:-numberFlankingBasepairs]]) for loc in allSeqs.index] 
-allSeqs.loc[:, 'flank'] = ''
-for loc in allSeqs.index:
-    if allSeqs.loc[loc, 'side'] == 'up':
-        side = 'side1'
-    else:
-        side = 'side2'
-    allSeqs.loc[loc, 'flank'] = allSeqs.loc[loc, 'tecto_object'].junction[side][:numberFlankingBasepairs] + allSeqs.loc[loc, 'tecto_object'].junction[side][-numberFlankingBasepairs:]
-
 workerPool = multiprocessing.Pool(processes=numCores)
 indices = np.array_split(allSeqs.index.tolist(), numCores)
 allSeqSub = workerPool.map(hjh.tecto_assemble.getSecondaryStructureMultiprocess,
@@ -150,6 +143,16 @@ workerPool.close(); workerPool.join()
 
 allSeqs = pd.concat(allSeqSub) 
 allSeqs.drop(['tecto_object'], axis=1).to_csv(args.out_file+'.txt', sep='\t')
+
+neworder = [ 'junction', 'length', 'offset', 'helix', 'receptor', 'loop',  'side',
+            'flank', 'no_flank', 'n_flank', 'junction_seq',  'junction_SS',  'ss_correct',
+            'adapters', 'base', 'helix_one_length', 'helix_seq',
+            'tecto_sequence', 'sequence', 'ss']
+allSeqs.loc[:, neworder].to_csv(args.out_file+'.txt', sep='\t')
+
+
+sys.exit()
+
 
 flanks = np.unique(allSeqs.loc[:, 'flank'])
 no_flanks = [f for f in np.unique(allSeqs.loc[:, 'no_flank']) if f[0] != '_']
