@@ -36,7 +36,7 @@ class Junction(object):
             print 'Check input: junction is not in tuple format.\n\tex: (\'M\',) or (\'B1\', \'B1\')\n'
             isJunctionGood = False
         for submotif in motif:
-            if submotif == 'M' or submotif == 'B1' or submotif == 'B2' or submotif == 'W' or submotif == '' or submotif == 'CG' or submotif == 'GC' or submotif == 'AU' or submotif == 'UA' or submotif == 'N'   :
+            if submotif == 'M' or submotif == 'B1' or submotif == 'B2' or submotif == 'W' or submotif == '' or submotif  == 'N' or submotif in 'ACGU' :
                 pass
             else:
                 print('%s\n%s\n%s\n%\n%s\n%s\n')%('Improperly formatted junction subMotif. Proper notation is:',
@@ -86,7 +86,7 @@ class Junction(object):
             possibleBases['side1'] = ['']*numberOfPossibilities
             possibleBases['side2'] = ['A', 'U', 'G', 'C']
         
-        elif submotif == 'GC':
+        elif submotif == 'G':
             # if bulge on side 2, side 2 is every base, opposite a blank 
             numberOfPossibilities = 1
             possibleBases = np.array(np.empty(numberOfPossibilities),
@@ -94,7 +94,7 @@ class Junction(object):
             possibleBases['side1'] = ['G']
             possibleBases['side2'] = ['C']
              
-        elif submotif == 'CG':
+        elif submotif == 'C':
             # if bulge on side 2, side 2 is every base, opposite a blank 
             numberOfPossibilities = 1
             possibleBases = np.array(np.empty(numberOfPossibilities),
@@ -102,7 +102,7 @@ class Junction(object):
             possibleBases['side1'] = ['C']
             possibleBases['side2'] = ['G']
             
-        elif submotif == 'AU':
+        elif submotif == 'A':
             # if bulge on side 2, side 2 is every base, opposite a blank 
             numberOfPossibilities = 1
             possibleBases = np.array(np.empty(numberOfPossibilities),
@@ -110,7 +110,7 @@ class Junction(object):
             possibleBases['side1'] = ['A']
             possibleBases['side2'] = ['U']
 
-        elif submotif == 'UA':
+        elif submotif == 'U':
             # if bulge on side 2, side 2 is every base, opposite a blank 
             numberOfPossibilities = 1
             possibleBases = np.array(np.empty(numberOfPossibilities),
@@ -166,8 +166,8 @@ class Junction(object):
             given possibile nucleotides for each junction side, what are all possible permutations of nucleotides?
             """
             possibleBases = self.mapSubmotifToNucleotide(submotif)
-            side1 = pd.Series([''.join(result) for result in itertools.product(possibleBases['side1'], side1)])
-            side2 = pd.Series([''.join(result[::-1]) for result in itertools.product(possibleBases['side2'], side2)])
+            side1 = pd.Series([''.join(result) for result in itertools.product(side1, possibleBases['side1'])])
+            side2 = pd.Series([''.join(result[::-1]) for result in itertools.product(side2, possibleBases['side2'])])
         
         numberOfCombos = self.howManyPossibilities()
         junctionSequences = pd.concat([side1, side2], axis=1, keys=['side1', 'side2']).astype(str)
@@ -192,7 +192,7 @@ class Junction(object):
         effectiveLength = 0
         if motif is not None:
             for submotif in motif:
-                if submotif == 'M' or submotif == 'W' or submotif == 'N' or submotif == 'UA' or submotif == 'AU' or submotif =='GC' or submotif =='CG':
+                if submotif in 'MWNUACG':
                     effectiveLength += 1
         
         
