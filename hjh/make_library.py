@@ -101,7 +101,7 @@ logSeqs = pd.DataFrame(index=np.arange(numToLog), columns=expt_params.columns.to
 with open(args.out_file + '.pkl', 'wb') as output:
     count = 0
     for i, params in enumerate(itertools.product(*[expt_params.loc[:,name].dropna() for name in expt_params])):
-        pass
+
         params = pd.Series(params, index=expt_params.columns.tolist())
       
         # if up, junction remains the same. else switch sides

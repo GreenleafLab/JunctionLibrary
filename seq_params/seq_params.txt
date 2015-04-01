@@ -1,0 +1,7 @@
+	name	side1	side2	loop
+adapters	truseq	TTGTATGGAAGACGTTCCTGGATCC	AGATCGGAAGAGCGGTTCAGC	
+base	normal	CUAGGA	UCCUAG	
+receptor	11nt	UAUGG	CCUAAG	
+loop	GGAA			GGAA
+helix	wc	AAGAUCCUCG	CGAGGAUCUU	
+helix	rigid	AAGAUCCUGG	CUGGGAUCUU	
