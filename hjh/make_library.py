@@ -192,6 +192,7 @@ ax = sns.heatmap(worksInAll.loc[a.index], square=True,
                     cbar=False)
 ax.set_yticklabels(a.index.tolist(), rotation=0, fontsize=12)
 
+# plot those that work in two sets
 b = worksInAll.loc[a.index].loc[(worksInAll.loc[a.index, ['A_', 'U_']] == 24).all(axis=1)].sum(axis=1).copy()
 b.sort()
 c = worksInAll.loc[a.index].loc[(worksInAll.loc[a.index, ['G_', 'C_']] == 24).all(axis=1)].sum(axis=1).copy()
@@ -201,9 +202,10 @@ ax = sns.heatmap(worksInAll.loc[pd.concat([b,c]).index], square=True,
                     linewidth=0.1, vmax=24, vmin=0,
                     annot=True, fmt='d',
                     cbar=False)
-ax.set_yticklabels(pd.concat([b,c]).index.tolist(), rotation=0, fontsize=12)
+ax.set_yticklabels(pd.concat([b,c]).index.tolist()[::-1], rotation=0, fontsize=12)
 ax.set_xticklabels(no_flanks, rotation=90, fontsize=12)
-
+plt.savefig(args.out_file + '.work_in_AU_or_CG.pdf')
+# plot those that work in other two sets
 b = worksInAll.loc[a.index].loc[(worksInAll.loc[a.index, ['A_', 'C_']] == 24).all(axis=1)].sum(axis=1).copy()
 b.sort()
 c = worksInAll.loc[a.index].loc[(worksInAll.loc[a.index, ['G_', 'U_']] == 24).all(axis=1)].sum(axis=1).copy()
@@ -213,64 +215,9 @@ ax = sns.heatmap(worksInAll.loc[pd.concat([b,c]).index], square=True,
                     linewidth=0.1, vmax=24, vmin=0,
                     annot=True, fmt='d',
                     cbar=False)
-ax.set_yticklabels(pd.concat([b,c]).index.tolist(), rotation=0, fontsize=12)
+ax.set_yticklabels(pd.concat([b,c]).index.tolist()[::-1], rotation=0, fontsize=12)
 ax.set_xticklabels(no_flanks, rotation=90, fontsize=12)
-
-
-
-iterables = [no_flanks, expt_params.length.dropna(), expt_params.offset.dropna().values]
-index = pd.MultiIndex.from_product(iterables, names=['no_flank', 'length', 'offset'])
-allsuccessSmaller = pd.DataFrame(index = allsuccessTrimmed.index, columns=index)
-
-for loc in allsuccessSmaller.index:
-    for col in [name for name in allsuccessSmaller]:
-        allsuccessSmaller.loc[loc, col] = allsuccessTrimmed.loc[loc, col].any()
-plt.figure(figsize=(20,7))
-ax = sns.heatmap(allsuccessSmaller.loc[worksInAll.index].astype(float).transpose(), square=True,
-                    linewidth=0,
-                    cbar=False)
-
-plt.figure(figsize=(20,20))
-ax = sns.heatmap(allsuccessTrimmed.loc[worksInAll.loc[worksInAll >= 288].index].astype(float), square=True,
-                    linewidth=0,
-                    cbar=False)
-
-ax.set_xticklabels(ax.get_xticklabels(), fontsize=6)
-plt.savefig(args.out_file+'.pdf')
-
-
-sys.exit()
-
-
-
-worksInAll = pd.DataFrame(index = ['_'.join(x) for x in itertools.product(['GC', 'CG', 'UA', 'AU'], ['GC', 'CG', 'UA', 'AU'])],
-                          columns=[allsuccess.index.tolist()])
-for flank1, flank2 in itertools.product(['GC', 'CG', 'UA', 'AU'], ['GC', 'CG', 'UA', 'AU']):
-    for ind in allsuccess.index.tolist():
-        worksInAll.loc['%s_%s'%(flank1, flank2), ind] = allsuccess.loc[ind,(flank1, flank2)].dropna().values.astype(bool).sum()
-
-numPlots = np.max([1, np.around(worksInAll.shape[1]/50.)])
-inds = np.array_split(np.arange(worksInAll.shape[1]), numPlots)
-for i, ind in enumerate(inds):
-    plt.figure(figsize=(0.16*(len(ind)-4)+4, 5))
-    sns.heatmap(worksInAll.iloc[:,ind].astype(int), square=True,
-                        annot=True, fmt="d",
-                        cbar=False,)
-    plt.tight_layout()
-    plt.savefig('%s.successes.%d.png'%(args.out_file, i))
-
-sys.exit()
-
-# get working flanks
-seqs = worksInAll.loc[worksInAll>=72].index.tolist()
-seqDict = {'A':'U', 'U':'A', 'G':'C', 'C':'G'}
-junctionMotifs = []
-for seq in seqs:
-    s = [''.join(x) for x in itertools.izip(list(seq), [seqDict[base] for base in seq])][::-1]
-    junctionMotifs.append( ','.join(s[:2] + ['B1,B1'] + s[-2:]))
-    
-[worksInAll.loc[worksInAll >= 70].loc[np.array([seq[1:-1] for seq in worksInAll.loc[worksInAll >= 70].index.tolist()]) == dinuc] for dinuc in ['AA', 'UU', 'CC', 'GG']]
-
+plt.savefig(args.out_file + '.work_in_AC_or_GU.pdf')
 
 
 
