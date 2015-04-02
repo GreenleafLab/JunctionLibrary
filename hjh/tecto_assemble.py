@@ -24,8 +24,12 @@ class TectoSeq():
         # save params in a series
         self.params = params.append(self.returnInfo())
         self.name = '_'.join(params.loc[['junction', 'length', 'offset']].astype(str))
-
-    
+        
+        # if junction has a name, change params name
+        if junction is not None:
+            if 'name' in junction.index:
+                self.params.loc['junction'] = junction.loc['name']
+        
     def threadTogether(self, inside, outside):
         return (outside[0] + inside + outside[1])
     
@@ -75,22 +79,27 @@ class TectoSeq():
         varnaScript = '~/VARNAv3-92.jar'
         seq, ss = self.findSecondaryStructure(tectoSeq)
         colormap = self.makeColormap(tectoSeq)
-        commandString = 'java -cp %s fr.orsay.lri.varna.applications.VARNAcmd -sequenceDBN "%s" -structureDBN "%s" -colorMap "%s" -colorMapStyle blue -o %s'%(varnaScript, seq, ss, ';'.join(colormap.astype(str)), 'test.png' )
+        commandString = 'java -cp %s fr.orsay.lri.varna.applications.VARNAcmd -sequenceDBN "%s" -structureDBN "%s" -colorMap "%s" -colorMapStyle blue -spaceBetweenBases "0.75" -o %s'%(varnaScript, seq, ss, ';'.join(colormap.astype(str)), 'test.png' )
         return commandString, seq, ss
     
     def returnInfo(self):
         
         params = pd.Series(index = ['junction_seq', 'n_flank', 'no_flank', 'flank', 'helix_one_length', 'helix_seq', 'tecto_sequence', 'sequence'] )
         try:
+            
             params.loc['junction_seq'] = '_'.join(self.junction.loc[['side1', 'side2']])
-            params.loc['n_flank'] = self.junction.loc['n_flank']
             params.loc['helix_seq'] = '&'.join(['_'.join(self.helix.split.loc['side1']), '_'.join(self.helix.split.loc['side2'])])
             params.loc['tecto_sequence'] = self.makeTecto()
             params.loc['sequence']  = self.threadTogether(params.loc['tecto_sequence'], self.adapters.loc[['side1', 'side2']]).replace('U', 'T')
+            params.loc['helix_one_length'] = len(self.helix.split.loc['side1', 'before'])
+            # things that require junction had other settings (i.e. name and n_flank)
+            params.loc['n_flank'] = int(self.junction.loc['n_flank'])
             params.loc['no_flank'] = '_'.join([self.junction.loc[side][params.loc['n_flank']:-params.loc['n_flank']] for side in ['side1', 'side2']])
             params.loc['flank'] = ''.join([self.junction.loc['side1'][:params.loc['n_flank']], self.junction.loc['side1'][-params.loc['n_flank']:]])
-            params.loc['helix_one_length'] = len(self.helix.split.loc['side1', 'before'])
+            #params.loc['junction'] = self.junction.loc['name']
+            
         except AttributeError: pass
+        
         return params
     
     def isSecondaryStructureCorrect(self, ss=None, numberFlankingBases=None):
