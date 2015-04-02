@@ -134,10 +134,30 @@ if __name__ == '__main__':
         expt_map.loc[np.arange(len(sides)), 'side'] = sides
         filenames[length] = os.path.join(saveDir, 'expt.length_%d.map'%length)
         expt_map.to_csv(filenames[length], index=False, sep='\t')
-        
+    
+    filenames = {}
+    lengths = [8, 9, 10, 11]
     for length in lengths:
-
+        filenames[length] = os.path.join(saveDir, 'expt.length_%d.map'%length)  
         print "%%run ~/JunctionLibrary/hjh/make_library.py -map %s -jun %s -out %s"%(filenames[length],
                                                                                      os.path.join(saveDir, 'all.junctions_to_compare.junctions'),
                                                                                      os.path.join(saveDir, 'all.junctions_to_compare.length_%d'%length))
-        
+    
+    sys.exit()  # and run make_library commands
+    filenames = [os.path.join(saveDir, 'all.junctions_to_compare.length_%d'%length) for length in lengths]
+    allSeqs = []
+    # load allSeqs
+    for filename in filenames:
+        allSeqSub = pd.read_table(filename+'.txt', index_col=0)
+        allSeqSub.loc[:, 'tecto_object'] = np.nan
+        with open(filename+'.pkl', 'rb') as input:
+            for loc in allSeqSub.index:
+                allSeqSub.loc[loc, 'tecto_object'] = pickle.load(input)
+        allSeqs.append(allSeqSub)
+    allSeqs = pd.concat(allSeqs, ignore_index=True)
+    
+    # print varna sequences fro moving A bulge and think about it
+    subset = allSeqs.loc[(allSeqs.loc[:, 'no_flank'] == 'A_')&(allSeqs.loc[:, 'flank'] == 'GCGC')&(allSeqs.loc[:, 'side'] == 'up')]
+    for loc in subset.index:
+        cmnd = subset.loc[loc, 'tecto_object'].printVarnaCommand()[0]
+        os.system(cmnd.replace('test.png', 'junction_%d.png'%loc))
