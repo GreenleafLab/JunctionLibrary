@@ -75,11 +75,12 @@ class TectoSeq():
         seq, ss, energy = subprocess.check_output("echo %s | RNAfold"%tectoSeq, shell=True).split()
         return seq, ss
     
-    def printVarnaCommand(self, tectoSeq=None):
+    def printVarnaCommand(self, tectoSeq=None, name=None):
+        if name is None: name = 'test.png'
         varnaScript = '~/VARNAv3-92.jar'
         seq, ss = self.findSecondaryStructure(tectoSeq)
         colormap = self.makeColormap(tectoSeq)
-        commandString = 'java -cp %s fr.orsay.lri.varna.applications.VARNAcmd -sequenceDBN "%s" -structureDBN "%s" -colorMap "%s" -colorMapStyle blue -spaceBetweenBases "0.75" -o %s'%(varnaScript, seq, ss, ';'.join(colormap.astype(str)), 'test.png' )
+        commandString = 'java -cp %s fr.orsay.lri.varna.applications.VARNAcmd -sequenceDBN "%s" -structureDBN "%s" -colorMap "%s" -colorMapStyle blue -spaceBetweenBases "0.75" -o %s'%(varnaScript, seq, ss, ';'.join(colormap.astype(str)), name)
         return commandString, seq, ss
     
     def returnInfo(self):
