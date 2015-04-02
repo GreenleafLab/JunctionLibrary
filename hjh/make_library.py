@@ -98,37 +98,36 @@ allSeqs = pd.DataFrame(columns=cols)
 logSeqs = pd.DataFrame(index=np.arange(numToLog), columns=expt_params.columns.tolist()+['number'])
 
 # initiate structure to store, per motif, and many contexts, whether it could form
-with open(args.out_file + '.pkl', 'wb') as output:
-    count = 0
-    for i, params in enumerate(itertools.product(*[expt_params.loc[:,name].dropna() for name in expt_params])):
+for i, params in enumerate(itertools.product(*[expt_params.loc[:,name].dropna() for name in expt_params])):
 
-        params = pd.Series(params, index=expt_params.columns.tolist())
-      
-        # if up, junction remains the same. else switch sides
-        junction = Junction(sequences=junctionSeqs.loc[:, ['side1', 'side2']])
-        if params.side == 'up':
-            pass
-        elif params.side == 'down':
-            junction.sequences = pd.DataFrame(junction.sequences.loc[:, ['side2', 'side1']].values,
-                                                         columns=['side1', 'side2'],
-                                                         index=[-name for name in junction.sequences.index])
-        # if you want to save n_flank
-        junction.sequences.loc[:, 'n_flank'] = junctionSeqs.loc[:, 'n_flank'].values
-        
-        # initialize saving
-        allSeqSub = pd.DataFrame(index=junction.sequences.index, columns=cols)
-        logSeqs.loc[i] = params
-        logSeqs.loc[i, 'number'] = len(junction.sequences)
-        print '%4.1f%% complete'%(100*i/float(numToLog))
-        
-        # cycle through junction sequences
-        f = functools.partial(hjh.tecto_assemble.findTecto, params, junction, seq_params)
-        workerPool = multiprocessing.Pool(processes=numCores)
-        allSeqSub = workerPool.map(f, np.array_split(junction.sequences.index.tolist(), numCores))
-        workerPool.close(); workerPool.join()
-        
-        allSeqs = allSeqs.append(pd.concat(allSeqSub), ignore_index=True)
-        allSeqs.loc[:, 'junction'] = junctionSeqs.loc[:, 'junction']
+    params = pd.Series(params, index=expt_params.columns.tolist())
+  
+    # if up, junction remains the same. else switch sides
+    junction = Junction(sequences=junctionSeqs.loc[:, ['side1', 'side2']])
+    if params.side == 'up':
+        pass
+    elif params.side == 'down':
+        junction.sequences = pd.DataFrame(junction.sequences.loc[:, ['side2', 'side1']].values,
+                                                     columns=['side1', 'side2'],
+                                                     index=[-name for name in junction.sequences.index])
+    # if you want to save n_flank
+    junction.sequences.loc[:, 'n_flank'] = junctionSeqs.loc[:, 'n_flank'].values
+    junction.sequences.loc[:, 'name'] = junctionSeqs.loc[:, 'junction'].values
+    
+    # initialize saving
+    allSeqSub = pd.DataFrame(index=junction.sequences.index, columns=cols)
+    logSeqs.loc[i] = params
+    logSeqs.loc[i, 'number'] = len(junction.sequences)
+    print '%4.1f%% complete'%(100*i/float(numToLog))
+    
+    # cycle through junction sequences
+    f = functools.partial(hjh.tecto_assemble.findTecto, params, junction, seq_params)
+    workerPool = multiprocessing.Pool(processes=numCores)
+    allSeqSub = workerPool.map(f, np.array_split(junction.sequences.index.tolist(), numCores))
+    workerPool.close(); workerPool.join()
+    
+    allSeqs = allSeqs.append(pd.concat(allSeqSub), ignore_index=True)
+
         
 # check if successful secondary structure        
 allSeqs.loc[:, 'ss'] = hjh.tecto_assemble.getAllSecondaryStructures(allSeqs.loc[:, 'tecto_sequence'])
@@ -144,14 +143,20 @@ workerPool.close(); workerPool.join()
 allSeqs = pd.concat(allSeqSub) 
 allSeqs.drop(['tecto_object'], axis=1).to_csv(args.out_file+'.txt', sep='\t')
 
+# save in new order
 neworder = [ 'junction', 'length', 'offset', 'helix', 'receptor', 'loop',  'side',
             'flank', 'no_flank', 'n_flank', 'junction_seq',  'junction_SS',  'ss_correct',
             'adapters', 'base', 'helix_one_length', 'helix_seq',
             'tecto_sequence', 'sequence', 'ss']
 allSeqs.loc[:, neworder].to_csv(args.out_file+'.txt', sep='\t')
 
+# also save object
+with open(args.out_file+'.pkl', 'wb') as output:
+    for loc in allSeqs.index:
+        pickle.dump(allSeqs.loc[loc, 'tecto_object'], output, pickle.HIGHEST_PROTOCOL)
 
 sys.exit()
+
 
 
 flanks = np.unique(allSeqs.loc[:, 'flank'])
