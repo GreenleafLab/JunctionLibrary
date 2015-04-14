@@ -38,6 +38,8 @@ parser.add_argument('-map','--map_file', help='file that contains parameters to 
 parser.add_argument('-max','--max_number', help='maximum number of seuqences per juncito motif', type=int)
 parser.add_argument('-par','--seq_params_file', help='location of seq_param file. Default is ~/JunctionLibrary/seq_params/seq_params.txt')
 parser.add_argument('-jun','--junction_sequence_file', help='overwrite the junction motifs given in map with particular sequenecs in this file')
+parser.add_argument('-con', '--ss_tert_contacts', action='store_false', help='flag if you dont want to check ss of receptor region')
+parser.add_argument('-ss', '--save_ss', action='store_true', help='flag if you only want to save those passing ss filter')
 
 parser.add_argument('-out','--out_file', help='file to save output')
 
@@ -83,7 +85,7 @@ numCores = 20
 # if seq file is defined, replace junction motifs with this
 if args.junction_sequence_file is not None:
     expt_params.loc[:, 'junction'] = ['defunct'] +[np.nan]*(len(expt_params)-1)
-    junctionSeqs = pd.read_table(args.junction_sequence_file, names=['junction', 'flank', 'index', 'side1', 'side2', 'n_flank'], header=0)
+    junctionSeqs = pd.read_table(args.junction_sequence_file, na_filter=False,  header=0)
 else:
     junctionSeqs = pd.DataFrame(columns=['side1', 'side2'])
     for motif in expt_params.loc[:, 'junction']:
@@ -136,23 +138,30 @@ allSeqs.drop(['tecto_object'], axis=1).to_csv(args.out_file+'.txt', sep='\t')
 #check if any module was successful
 workerPool = multiprocessing.Pool(processes=numCores)
 indices = np.array_split(allSeqs.index.tolist(), numCores)
-allSeqSub = workerPool.map(hjh.tecto_assemble.getSecondaryStructureMultiprocess,
+f = functools.partial(hjh.tecto_assemble.getSecondaryStructureMultiprocess, args.ss_tert_contacts)
+allSeqSub = workerPool.map(f,
                            [allSeqs.loc[index] for index in indices])
 workerPool.close(); workerPool.join()
 
 allSeqs = pd.concat(allSeqSub) 
 allSeqs.drop(['tecto_object'], axis=1).to_csv(args.out_file+'.txt', sep='\t')
 
+
+allSeqs.drop_duplicates(subset=['tecto_sequence'], inplace=True)
 # save in new order
+if args.save_ss:
+    index = allSeqs.loc[allSeqs.loc[:, 'ss_correct']].index
+else:
+    index = allSeqs.index
 neworder = [ 'junction', 'length', 'offset', 'helix', 'receptor', 'loop',  'side',
             'flank', 'no_flank', 'n_flank', 'junction_seq',  'junction_SS',  'ss_correct',
             'adapters', 'base', 'helix_one_length', 'helix_seq',
             'tecto_sequence', 'sequence', 'ss']
-allSeqs.loc[:, neworder].to_csv(args.out_file+'.txt', sep='\t')
+allSeqs.loc[index, neworder].to_csv(args.out_file+'.txt', sep='\t')
 
 # also save object
 with open(args.out_file+'.pkl', 'wb') as output:
-    for loc in allSeqs.index:
+    for loc in index:
         pickle.dump(allSeqs.loc[loc, 'tecto_object'], output, pickle.HIGHEST_PROTOCOL)
 
 sys.exit()
