@@ -36,7 +36,7 @@ class Junction(object):
             print 'Check input: junction is not in tuple format.\n\tex: (\'M\',) or (\'B1\', \'B1\')\n'
             isJunctionGood = False
         for submotif in motif:
-            if submotif == 'M' or submotif == 'B1' or submotif == 'B2' or submotif == 'W' or submotif == '' or submotif  == 'N' or submotif in 'ACGU' :
+            if submotif == 'M' or submotif == 'B1' or submotif == 'B2' or submotif == 'W' or submotif == '_' or submotif  == 'N' or submotif in 'ACGU' or submotif == 'GU' or submotif == 'W+':
                 pass
             else:
                 print('%s\n%s\n%s\n%\n%s\n%s\n')%('Improperly formatted junction subMotif. Proper notation is:',
@@ -118,7 +118,7 @@ class Junction(object):
             possibleBases['side1'] = ['U']
             possibleBases['side2'] = ['A']
         
-        elif submotif == '':
+        elif submotif == '_':
             # if no junction, i.e. for straight 'rigid'
             numberOfPossibilities = 1
             possibleBases = np.array(np.empty(numberOfPossibilities),
@@ -127,13 +127,29 @@ class Junction(object):
             possibleBases['side2'] = ['']*numberOfPossibilities
 
         elif submotif == 'N':
-            # if no junction, i.e. for straight 'rigid'
+            # all N bases (mismatches and WC)
             numberOfPossibilities = 16
             possibleBases = np.array(np.empty(numberOfPossibilities),
                                     dtype={'names':('side1', 'side2'), 'formats':('S1','S1')})
             possibleBases['side1'] = ['A']*4 + ['U']*4 + ['G']*4 + ['C']*4
             possibleBases['side2'] = ['A', 'G', 'C', 'U',  'A', 'G', 'C', 'U', 'A', 'G', 'C', 'U','A', 'G', 'C', 'U',]
-            
+
+        elif submotif == 'GU':
+            # GU wobble
+            numberOfPossibilities = 2
+            possibleBases = np.array(np.empty(numberOfPossibilities),
+                                    dtype={'names':('side1', 'side2'), 'formats':('S1','S1')})
+            possibleBases['side1'] = ['U', 'G']
+            possibleBases['side2'] = ['G', 'U']
+        
+        elif submotif == 'W+':
+            # watson crick and GU wobble
+            numberOfPossibilities = 6
+            possibleBases = np.array(np.empty(numberOfPossibilities),
+                                    dtype={'names':('side1', 'side2'), 'formats':('S1','S1')})
+            possibleBases['side1'] = ['U', 'G', 'A', 'U', 'G', 'C']
+            possibleBases['side2'] = ['G', 'U', 'U', 'A', 'C', 'G']            
+
         return pd.DataFrame(possibleBases)
     
     def howManyPossibilities(self):
@@ -192,7 +208,7 @@ class Junction(object):
         effectiveLength = 0
         if motif is not None:
             for submotif in motif:
-                if submotif in 'MWNUACG':
+                if submotif in 'MWNUACG' or submotif == 'W+' or submotif == 'GU':
                     effectiveLength += 1
         
         
