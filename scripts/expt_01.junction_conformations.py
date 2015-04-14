@@ -30,7 +30,7 @@ def getAllJunctionSeqs():
                 
                 junctionSeq = junctionSeq.loc[indices]
             junctionSeqs[motif][''.join(flank)] = junctionSeq
-        junctionSeqs[motif] = pd.concat(junctionSeqs[motif])
+        junctionSeqs[motif] = pd.concat(junctionSeqs[motif], names=['flank'])
     
     # now 2x2s:
     flanks = [['G','C'], ['C', 'G']]
@@ -42,7 +42,7 @@ def getAllJunctionSeqs():
             junctionSeq = Junction(tuple(junctionMotif.split(','))).sequences
             junctionSeq.loc[:, 'n_flank'] = baseNum
             junctionSeqs[motif][''.join(flank)] = junctionSeq
-        junctionSeqs[motif] = pd.concat(junctionSeqs[motif])
+        junctionSeqs[motif] = pd.concat(junctionSeqs[motif], names=['flank'])
             
     # now 2x1s:
     flanks = [['G', 'C', 'G', 'C'], ['C', 'U', 'A', 'G']]
@@ -100,9 +100,9 @@ def getAllJunctionSeqs():
             junctionSeqs[motif+',M'][''.join(flank)]  = junctionSeq.loc[indices]
             
         for actual_motif in ['M,' + motif, motif+',M']:
-            junctionSeqs[actual_motif] = pd.concat(junctionSeqs[actual_motif])
+            junctionSeqs[actual_motif] = pd.concat(junctionSeqs[actual_motif], names=['flank'])
     
-    return pd.concat(junctionSeqs)
+    return pd.concat(junctionSeqs, names=['junction'])
 
 ## for junction conformation expt, do two flanking base pairs, 7 different positions
 if __name__ == '__main__':
