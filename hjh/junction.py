@@ -23,7 +23,7 @@ class Junction(object):
                 self.length = self.findEffectiveJunctionLength(motif=junctionMotif)
         if sequences is not None:
             self.sequences = sequences
-        
+            self.sequences.loc[:, 'effective_length'] = [self.findEffectiveJunctionLength(sequence=sequences.loc[i]) for i in sequences.index]
         
     def testJunction(self):
         """

@@ -40,6 +40,7 @@ parser.add_argument('-par','--seq_params_file', help='location of seq_param file
 parser.add_argument('-jun','--junction_sequence_file', help='overwrite the junction motifs given in map with particular sequenecs in this file')
 parser.add_argument('-con', '--ss_tert_contacts', action='store_false', help='flag if you dont want to check ss of receptor region')
 parser.add_argument('-ss', '--save_ss', action='store_true', help='flag if you only want to save those passing ss filter')
+parser.add_argument('-jl', '--junction_length', type=int, help='if defined, use this value as effective junction length')
 
 parser.add_argument('-out','--out_file', help='file to save output')
 
@@ -77,6 +78,9 @@ if args.out_file is None:
 if args.seq_params_file is None:
     args.seq_params_file = os.path.expanduser('~/JunctionLibrary/seq_params/seq_params.txt')
 
+if args.junction_length is None:
+    args.junction_length = -1
+    
 # load file setting parameters like loop and receptor sequences
 expt_params = pd.read_table(args.map_file)
 seq_params    = pd.read_table(args.seq_params_file , index_col=[0,1])
@@ -99,23 +103,24 @@ numToLog =  np.product((~expt_params.isnull()).sum().values)
 allSeqs = pd.DataFrame(columns=cols)
 logSeqs = pd.DataFrame(index=np.arange(numToLog), columns=expt_params.columns.tolist()+['number'])
 
+
+
 # initiate structure to store, per motif, and many contexts, whether it could form
 for i, params in enumerate(itertools.product(*[expt_params.loc[:,name].dropna() for name in expt_params])):
 
     params = pd.Series(params, index=expt_params.columns.tolist())
   
     # if up, junction remains the same. else switch sides
-    junction = Junction(sequences=junctionSeqs.loc[:, ['side1', 'side2']])
+    junction = Junction(sequences=junctionSeqs)
     if params.side == 'up':
         pass
     elif params.side == 'down':
-        junction.sequences = pd.DataFrame(junction.sequences.loc[:, ['side2', 'side1']].values,
-                                                     columns=['side1', 'side2'],
+        ind = np.logical_not(np.in1d(junction.sequences.columns, ['side1', 'side2']))
+        cols = junction.sequences.columns[ind].tolist()
+        junction.sequences = pd.DataFrame(junction.sequences.loc[:, cols + ['side2', 'side1']].values,
+                                                     columns=cols + ['side1', 'side2'],
                                                      index=[-name for name in junction.sequences.index])
-    # if you want to save n_flank
-    junction.sequences.loc[:, 'n_flank'] = junctionSeqs.loc[:, 'n_flank'].values
-    junction.sequences.loc[:, 'name'] = junctionSeqs.loc[:, 'junction'].values
-    
+
     # initialize saving
     allSeqSub = pd.DataFrame(index=junction.sequences.index, columns=cols)
     logSeqs.loc[i] = params
@@ -123,14 +128,14 @@ for i, params in enumerate(itertools.product(*[expt_params.loc[:,name].dropna() 
     print '%4.1f%% complete'%(100*i/float(numToLog))
     
     # cycle through junction sequences
-    f = functools.partial(hjh.tecto_assemble.findTecto, params, junction, seq_params)
+    f = functools.partial(hjh.tecto_assemble.findTecto, params, junction, seq_params, args.junction_length)
     workerPool = multiprocessing.Pool(processes=numCores)
     allSeqSub = workerPool.map(f, np.array_split(junction.sequences.index.tolist(), numCores))
     workerPool.close(); workerPool.join()
     
     allSeqs = allSeqs.append(pd.concat(allSeqSub), ignore_index=True)
-
-        
+print '100.0% complete. Checking secondary structure..'
+       
 # check if successful secondary structure        
 allSeqs.loc[:, 'ss'] = hjh.tecto_assemble.getAllSecondaryStructures(allSeqs.loc[:, 'tecto_sequence'])
 allSeqs.drop(['tecto_object'], axis=1).to_csv(args.out_file+'.txt', sep='\t')
@@ -142,10 +147,6 @@ f = functools.partial(hjh.tecto_assemble.getSecondaryStructureMultiprocess, args
 allSeqSub = workerPool.map(f,
                            [allSeqs.loc[index] for index in indices])
 workerPool.close(); workerPool.join()
-
-allSeqs = pd.concat(allSeqSub) 
-allSeqs.drop(['tecto_object'], axis=1).to_csv(args.out_file+'.txt', sep='\t')
-
 
 allSeqs.drop_duplicates(subset=['tecto_sequence'], inplace=True)
 # save in new order

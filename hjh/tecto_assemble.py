@@ -31,8 +31,8 @@ class TectoSeq():
 
         # if junction has a name, change params name
         if junction is not None:
-            if 'name' in junction.index:
-                self.params.loc['junction'] = junction.loc['name']
+            if 'junction' in junction.index:
+                self.params.loc['junction'] = junction.loc['junction']
         
     def threadTogether(self, inside, outside):
         return (outside[0] + inside + outside[1])
@@ -100,7 +100,7 @@ class TectoSeq():
     
     def returnInfo(self):
         
-        params = pd.Series(index = ['junction_seq', 'n_flank', 'no_flank', 'flank', 'helix_one_length', 'helix_seq', 'tecto_sequence', 'sequence'] )
+        params = pd.Series(index = ['junction_seq', 'n_flank', 'no_flank', 'flank', 'helix_one_length', 'helix_seq', 'effective_length', 'tecto_sequence', 'sequence'] )
         try:
             
             params.loc['junction_seq'] = '_'.join(self.junction.loc[['side1', 'side2']])
@@ -116,6 +116,7 @@ class TectoSeq():
             params.loc['no_flank'] = '_'.join([self.junction.loc[side][params.loc['n_flank']:-params.loc['n_flank']] for side in ['side1', 'side2']])
             params.loc['flank'] = ''.join([self.junction.loc['side1'][:params.loc['n_flank']], self.junction.loc['side1'][-params.loc['n_flank']:]])
             #params.loc['junction'] = self.junction.loc['name']
+            params.loc['effective_length'] = len(self.helix.split.loc['side1', 'before']) + len(self.helix.split.loc['side1', 'after']) + self.junction.loc['effective_length']
         except (AttributeError, KeyError):
             pass
 
@@ -183,16 +184,24 @@ class TectoSeq():
             
         return isCorrect, junctionSS, ''.join(ss)
 
-def findTecto(params, junction, seq_params, locs):
+def findTecto(params, junction, seq_params, junctionLength, locs):
     cols = TectoSeq(seq_params, params).params.index
     allSeqSub = pd.DataFrame(index=locs, columns=cols)
+    if junctionLength == -1:
+        findJunctionLength = True
+    else:
+        findJunctionLength = False
     for loc in locs:
+        this_junction = junction.sequences.loc[loc]
+        if findJunctionLength:
+            junctionLength = junction.findEffectiveJunctionLength(sequence=this_junction)
+
         helix = Helix(seq_params.loc[('helix', params.helix)],
-                      junction.findEffectiveJunctionLength(sequence=junction.sequences.loc[loc]),
+                      junctionLength,
                       params.offset, int(params.length))
         # make all NaNs into empty strings
         #junction.sequences.loc[loc, np.isnan(junction.sequences.loc[loc])] = ''        
-        tectoSeq = TectoSeq(seq_params, params, helix, junction.sequences.loc[loc])
+        tectoSeq = TectoSeq(seq_params, params, helix, this_junction)
         allSeqSub.loc[loc] = tectoSeq.params
         allSeqSub.loc[loc, 'tecto_object'] = tectoSeq
     return allSeqSub
