@@ -50,7 +50,7 @@ if __name__ == '__main__':
 
     # load receptor/loop combos
     filenames = {}
-    for s in ['loops', 'receptors']:
+    for s in ['loops', 'receptors', 'receptors_abbrev']:
         filenames[s] = os.path.join(saveDir, 'expt_map.%s.txt'%s)
     
     for key, filename in filenames.items():
@@ -61,7 +61,7 @@ if __name__ == '__main__':
     sys.exit()  # and run make_library commands
     
     
-    filenames = [os.path.join(saveDir, 'all.junctions_to_compare.%s.junctions'%s) for s in ['loops', 'receptors']]
+    filenames = [os.path.join(saveDir, 'all.junctions_to_compare.%s.junctions'%s) for s in ['loops', 'receptors','receptors_abbrev']]
     allSeqs = []
     # load allSeqs
     for filename in filenames:

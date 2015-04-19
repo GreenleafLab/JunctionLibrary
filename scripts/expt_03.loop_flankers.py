@@ -100,7 +100,7 @@ if __name__ == '__main__':
                                                                                      )
     
     sys.exit()  # and run make_library commands
-    filenames = [os.path.join(saveDir, 'all.junctions_to_compare.length_%d'%length) for length in lengths]
+    filenames = [os.path.join(saveDir, 'all.junctions_to_compare.library')]
     allSeqs = []
     # load allSeqs
     for filename in filenames:
@@ -113,7 +113,9 @@ if __name__ == '__main__':
     allSeqs = pd.concat(allSeqs, ignore_index=True)
     
     # print varna sequences fro moving A bulge and think about it
-    subset = allSeqs.loc[(allSeqs.loc[:, 'no_flank'] == 'A_')&(allSeqs.loc[:, 'flank'] == 'GCGC')&(allSeqs.loc[:, 'side'] == 'up')]
+    subset = allSeqs.loc[(allSeqs.loc[:, 'no_flank'] == '_')]
+    # print varna sequences fro moving A bulge and think about it
+    #subset = allSeqs.loc[(allSeqs.loc[:, 'no_flank'] == 'A_')&(allSeqs.loc[:, 'length'] == 10)]
     for loc in subset.index:
-        cmnd = subset.loc[loc, 'tecto_object'].printVarnaCommand()[0]
-        os.system(cmnd.replace('test.png', 'junction_%d.png'%loc))
+        cmnd = subset.loc[loc, 'tecto_object'].printVarnaCommand(name=os.path.join(saveDir, 'junction_%d.%s.length_%d.png'%(loc, allSeqs.loc[loc, 'no_flank'], allSeqs.loc[loc, 'length'])))
+        os.system(cmnd)
