@@ -135,10 +135,9 @@ for i, params in enumerate(itertools.product(*[expt_params.loc[:,name].dropna() 
     
     allSeqs = allSeqs.append(pd.concat(allSeqSub), ignore_index=True)
 print '100.0% complete. Checking secondary structure..'
-       
+
 # check if successful secondary structure        
 allSeqs.loc[:, 'ss'] = hjh.tecto_assemble.getAllSecondaryStructures(allSeqs.loc[:, 'tecto_sequence'])
-allSeqs.drop(['tecto_object'], axis=1).to_csv(args.out_file+'.txt', sep='\t')
 
 #check if any module was successful
 workerPool = multiprocessing.Pool(processes=numCores)
@@ -147,16 +146,29 @@ f = functools.partial(hjh.tecto_assemble.getSecondaryStructureMultiprocess, args
 allSeqSub = workerPool.map(f,
                            [allSeqs.loc[index] for index in indices])
 workerPool.close(); workerPool.join()
+allSeqs = pd.concat(allSeqSub)
 
-allSeqs.drop_duplicates(subset=['tecto_sequence'], inplace=True)
-# save in new order
+# drop duplicates and rop assembled sequences that are much longer than expected
+index = allSeqs.drop_duplicates(subset=['tecto_sequence']).index
+print 'Removing %d duplicates...'%(len(allSeqs) - len(index))
+allSeqs = allSeqs.loc[index]
+
+index = allSeqs.loc[:, 'effective_length'] <= 13
+print 'Removing %d sequences longer than 13 bp...'%(len(allSeqs) - len(index))
+allSeqs = allSeqs.loc[index]
+
+# drop those that don't have correct secondary structure if flag is set in options
 if args.save_ss:
     index = allSeqs.loc[allSeqs.loc[:, 'ss_correct']].index
+    s = 'Removing'
 else:
     index = allSeqs.index
+    s = 'Keeping'
+print '%s %d sequences that have incorrect secondary structure'%(s, len(allSeqs) - len(allSeqs.loc[allSeqs.loc[:, 'ss_correct']]) )
+
 neworder = [ 'junction', 'length', 'offset', 'helix', 'receptor', 'loop',  'side',
             'flank', 'no_flank', 'n_flank', 'junction_seq',  'junction_SS',  'ss_correct',
-            'adapters', 'base', 'helix_one_length', 'helix_seq',
+            'adapters', 'base', 'helix_one_length', 'effective_length', 'helix_seq',
             'tecto_sequence', 'sequence', 'ss']
 allSeqs.loc[index, neworder].to_csv(args.out_file+'.txt', sep='\t')
 
