@@ -112,7 +112,7 @@ class TectoSeq():
         except AttributeError: pass
         
         try:
-            params.loc['n_flank'] = int(self.junction.loc['n_flank'])
+            params.loc['n_flank'] = int(float(self.junction.loc['n_flank']))
             params.loc['no_flank'] = '_'.join([self.junction.loc[side][params.loc['n_flank']:-params.loc['n_flank']] for side in ['side1', 'side2']])
             params.loc['flank'] = ''.join([self.junction.loc['side1'][:params.loc['n_flank']], self.junction.loc['side1'][-params.loc['n_flank']:]])
             #params.loc['junction'] = self.junction.loc['name']

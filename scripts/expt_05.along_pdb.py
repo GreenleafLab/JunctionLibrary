@@ -54,27 +54,45 @@ def getAllJunctionSeqs():
         s = pdb_junctions.loc[i, 'ss'].split('&')
         pdb_junctions.loc[i, 'junction'] = 'pdb_' + 'x'.join([str(np.sum(np.in1d(list(x), '.'))) for x in s])
 
-    return pdb_junctions.loc[:, ['junction', 'flank', 'side1', 'side2', 'n_flank']].sort('junction')
+    junctions = ['pdb_0x0',  'pdb_1x0', 'pdb_1x1', 'pdb_2x0', 'pdb_2x1',
+       'pdb_2x2', 'pdb_3x0', 'pdb_3x1', 'pdb_3x2', 'pdb_3x3']
+    index = np.in1d(pdb_junctions.loc[:, 'junction'], junctions)
+    
+    return pdb_junctions.loc[index, ['junction', 'flank', 'side1', 'side2', 'n_flank']].sort('junction')
 
 ## for junction conformation expt, do two flanking base pairs, 7 different positions
 if __name__ == '__main__':
  
-    saveDir = '150311_library_v2/junction_conformations_pdb/'
+    saveDir = '150311_library_v2/along_pdb/'
     if not os.path.exists(saveDir): os.mkdir(saveDir)
     
     # get sequences
     junctionSeqs = getAllJunctionSeqs()
+    junctionSeqs = {}
+    junctionSeqs['up'] = getAllJunctionSeqs()
+    junctionSeqs['down'] = junctionSeqs['up'].copy()
+    junctionSeqs['down'].loc[:, 'side1'] = junctionSeqs['up'].loc[:, 'side2']
+    junctionSeqs['down'].loc[:, 'side2'] = junctionSeqs['up'].loc[:, 'side1']
+    junctionSeqs = pd.concat(junctionSeqs)
+    # switch side before adding flank
+    
+    # add a flanker
+    junctionSeqs.loc[:, 'side1'] = junctionSeqs.loc[:, 'side1'] + 'U'
+    junctionSeqs.loc[:, 'side2'] = 'A' + junctionSeqs.loc[:, 'side2']
+    junctionSeqs.loc[:, 'side1'] = 'U' + junctionSeqs.loc[:, 'side1']
+    junctionSeqs.loc[:, 'side2'] = junctionSeqs.loc[:, 'side2'] + 'A'
+    junctionSeqs.loc[:, 'n_flank'] = junctionSeqs.loc[:, 'n_flank'] + 1
     junctionSeqs.to_csv(os.path.join(saveDir, 'all.junctions_to_compare.junctions'), sep='\t', index=True)
     
-    # make map files
-    lengths = [8, 9, 10, 11, 12]
-    offsetsPerLength = {8:[0], 9:[-1,0,1], 10:[-1,0,1], 11:[0], 12:[0] }
+    # load length/offset combos
+    lengths = [8, 9, 10, 11]
+    offsetsPerLength = {8:range(-2,3), 9:range(-2,4), 10:range(-3,4), 11:range(-3, 5)}
     filenames = {}
     num_lengths = len(lengths)
     expt_map_constant = pd.Series(index = ['helix','junction','receptor','loop', 'base',   'adapters'],
                                   data  = ['wc',   'defunct', '11nt',    'GGAA', 'normal', 'truseq'], dtype=str)
     cols = expt_map_constant.index.tolist()
-    sides = ['up', 'down']
+    sides = ['up']
     for length in lengths:
         offsets = offsetsPerLength[length]
         num = max(len(offsets), len(sides))
@@ -86,10 +104,6 @@ if __name__ == '__main__':
         expt_map.loc[np.arange(len(sides)), 'side'] = sides
         filenames[length] = os.path.join(saveDir, 'expt.length_%d.map'%length)
         expt_map.to_csv(filenames[length], index=False, sep='\t')
-    
-    filenames = {}
-    for length in lengths:
-        filenames[length] = os.path.join(saveDir, 'expt.length_%d.map'%length)  
         print "%%run ~/JunctionLibrary/hjh/make_library.py -map %s -jun %s -out %s"%(filenames[length],
                                                                                      os.path.join(saveDir, 'all.junctions_to_compare.junctions'),
                                                                                      os.path.join(saveDir, 'all.junctions_to_compare.length_%d'%length))

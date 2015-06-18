@@ -140,8 +140,8 @@ print '100.0% complete. Checking secondary structure..'
 allSeqs.loc[:, 'ss'] = hjh.tecto_assemble.getAllSecondaryStructures(allSeqs.loc[:, 'tecto_sequence'])
 
 #check if any module was successful
-workerPool = multiprocessing.Pool(processes=numCores)
-indices = np.array_split(allSeqs.index.tolist(), numCores)
+workerPool = multiprocessing.Pool(processes= np.min([numCores, len(allSeqs)]))
+indices = np.array_split(allSeqs.index.tolist(),  np.min([numCores, len(allSeqs)]))
 f = functools.partial(hjh.tecto_assemble.getSecondaryStructureMultiprocess, args.ss_tert_contacts)
 allSeqSub = workerPool.map(f,
                            [allSeqs.loc[index] for index in indices])

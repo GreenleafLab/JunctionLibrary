@@ -64,7 +64,7 @@ def getAllJunctionSeqs():
 ## for junction conformation expt, do two flanking base pairs, 7 different positions
 if __name__ == '__main__':
  
-    saveDir = '150311_library_v2/along_N'
+    saveDir = '150311_library_v2/along'
     if not os.path.exists(saveDir): os.mkdir(saveDir)
     
     # get sequences

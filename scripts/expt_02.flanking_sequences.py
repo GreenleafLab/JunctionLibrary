@@ -13,13 +13,13 @@ def getAllJunctionSeqs():
     junctionMotifs = []
     junctionSeqs = {}
     
-    for motif in ['B1', 'B1,B1', 'B1,B1,B1', 'N', 'B1,M']:
+    for motif in ['B1', 'B1,B1', 'B1,B1,B1', 'N', 'B1,M', 'B1,B1,M', 'B1,M,M']:
 
         junctionSeqs[motif] = {}
 
         junctionMotif = 'G,W,'+motif+',W,C'
         junctionSeq = Junction(tuple(junctionMotif.split(','))).sequences
-        junctionSeq.loc[:, 'n_flank'] = 2
+        
 
         if motif == 'B1,B1,B1' or motif == 'B1,M':
             # only take those sequences with an A in the middle
@@ -28,6 +28,12 @@ def getAllJunctionSeqs():
                 if junctionSeq.loc[index, 'side1'][1] == 'A':
                     indices.append(index)
             junctionSeq = junctionSeq.loc[indices]
+        
+        maxNumSeqs = 12
+        if motif == 'B1,B1,M' or motif == 'B1,M,M':
+            junctionSeq = junctionSeq.loc[np.linspace(0, len(junctionSeq)-1, maxNumSeqs)]
+        
+        junctionSeq.loc[:, 'n_flank'] = 2
         flank = 'GC'
         junctionSeqs[motif][flank] = junctionSeq
         junctionSeqs[motif] = pd.concat(junctionSeqs[motif], names=['flank'])

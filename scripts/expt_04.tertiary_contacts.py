@@ -46,18 +46,36 @@ if __name__ == '__main__':
     
     # get sequences
     junctionSeqs = getAllJunctionSeqs()
-    junctionSeqs.to_csv(os.path.join(saveDir, 'all.junctions_to_compare.junctions'), sep='\t', index=True)
+    
+    # not bulged sequences
+    all_motifs = junctionSeqs.index.levels[0].tolist()
+    motifs = ['B1', 'B1,B1', 'B1,B1,B1']
+    index = [motif for motif in all_motifs if motif not in motifs]
+    junctionSeqs.loc[index].to_csv(os.path.join(saveDir, 'all.junctions_to_compare.no_bulges.junctions'), sep='\t', index=True)
+
 
     # load receptor/loop combos
     filenames = {}
     for s in ['loops', 'receptors', 'receptors_abbrev']:
-        filenames[s] = os.path.join(saveDir, 'expt_map.%s.txt'%s)
+        filenames[s] = os.path.join(saveDir, 'expt.offset_0.%s.map'%s)
     
     for key, filename in filenames.items():
         print "%%run ~/JunctionLibrary/hjh/make_library.py -map %s -jun %s -o %s -con"%(filename,
-                                                                                     os.path.join(saveDir, 'all.junctions_to_compare.junctions'),
-                                                                                     os.path.join(saveDir, 'all.junctions_to_compare.%s.junctions'%key))
+                                                                                     os.path.join(saveDir, 'all.junctions_to_compare.no_bulges.junctions'),
+                                                                                     os.path.join(saveDir, 'all.junctions_to_compare.offset_0.%s'%key))
     
+    # for a subset
+    junctionSeqs.loc[motifs].to_csv(os.path.join(saveDir, 'all.junctions_to_compare.bulges.junctions'), sep='\t', index=True)
+
+    # load receptor/loop combos
+    filenames = {}
+    for s in ['loops', 'receptors', 'receptors_abbrev']:
+        filenames[s] = os.path.join(saveDir, 'expt.offset_1.%s.map'%s)
+    
+    for key, filename in filenames.items():
+        print "%%run ~/JunctionLibrary/hjh/make_library.py -map %s -jun %s -o %s -con"%(filename,
+                                                                                     os.path.join(saveDir, 'all.junctions_to_compare.bulges.junctions'),
+                                                                                     os.path.join(saveDir, 'all.junctions_to_compare.offset_1.%s'%key))
     sys.exit()  # and run make_library commands
     
     
