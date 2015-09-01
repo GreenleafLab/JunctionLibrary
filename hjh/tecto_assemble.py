@@ -79,23 +79,31 @@ class TectoSeq():
         seq, ss, energy = subprocess.check_output("echo %s | RNAfold"%tectoSeq, shell=True).split()
         return seq, ss
     
-    def printVarnaCommand(self, tectoSeq=None, name=None, indices=None, use_colormap=None):
+    def printVarnaCommand(self, tectoSeq=None, name=None, indices=None, use_colormap=None, colormap=None,
+                          colormapStyle=None):
         if name is None: name = 'test.png'
         if use_colormap is None: use_colormap = True
-        
+        if colormapStyle is None:
+            colormapStyle = 'blue'
         varnaScript = '~/VARNAv3-92.jar'
         seq, ss = self.findSecondaryStructure(tectoSeq)
         
-        colormap = self.makeColormap(tectoSeq)
+        if colormap is None:
+            colormap = self.makeColormap(tectoSeq)
         if indices is not None:
             seq = ''.join(np.array(list(seq))[indices])
             ss = ''.join(np.array(list(ss))[indices])
             colormap = colormap[indices]
         
         if use_colormap:
-            commandString = 'java -cp %s fr.orsay.lri.varna.applications.VARNAcmd -sequenceDBN "%s" -structureDBN "%s" -colorMap "%s" -colorMapStyle blue -spaceBetweenBases "0.6" -drawBases False -o %s'%(varnaScript, seq, ss, ';'.join(colormap.astype(str)), name)
+            commandString = ('java -cp %s fr.orsay.lri.varna.applications.VARNAcmd '
+                             '-sequenceDBN "%s" -structureDBN "%s" -colorMap "%s" '
+                             '-colorMapStyle %s -spaceBetweenBases "0.6" '
+                             '-drawBases False -o %s')%(varnaScript, seq, ss, ';'.join(colormap.astype(str)),colormapStyle, name)
         else:
-            commandString = 'java -cp %s fr.orsay.lri.varna.applications.VARNAcmd -sequenceDBN "%s" -structureDBN "%s" -spaceBetweenBases "0.6" -drawBases False -o %s'%(varnaScript, seq, ss, name)
+            commandString = ('java -cp %s fr.orsay.lri.varna.applications.VARNAcmd '
+                             '-sequenceDBN "%s" -structureDBN "%s" '
+                             '-spaceBetweenBases "0.6" -drawBases False -o %s')%(varnaScript, seq, ss, name)
         return commandString
     
     def returnInfo(self):
@@ -237,3 +245,52 @@ def getSecondaryStructureMultiprocess(checkReceptor, allSeqSub):
         allSeqSub.loc[loc, 'junction_SS'] = junctionSS
     
     return allSeqSub
+
+def find_all(a_str, sub):
+    start = 0
+    while True:
+        start = a_str.find(sub, start)
+        if start == -1: return
+        yield start
+        start += len(sub) # use start += 1 to find overlapping matches
+
+def makeSimpleColormap(sequence, ss):
+    colormap = np.zeros(len(sequence))
+
+    loopStarts = list(find_all(ss, '(....)')) 
+    loopLength = 4
+    if len(loopStarts) > 0:
+        for loopStart in loopStarts:
+            ind = np.arange(loopStart+1, loopStart+1+loopLength)
+            if ''.join(np.array(list(sequence))[ind]) != 'GGAA':
+                colormap[ind] = 0.25
+            else:
+                colormap[ind] = 1
+    
+    receptorStart = 6
+    receptorLength1 = 5
+    colormap[receptorStart:receptorStart+receptorLength1] = -1
+    
+    receptorEnd = -6
+    receptorLength2 = 6
+    colormap[receptorEnd-receptorLength2:receptorEnd] = -1
+    return colormap
+
+def makeSimpleSsDiagram(variant_info):
+    varnaScript = '~/VARNAv3-92.jar'
+    seq = variant_info.sequence.replace('T', 'U')
+    ss  = variant_info.ss
+    if np.isnan(ss):
+        seq, ss, energy = subprocess.check_output("echo %s | RNAfold"%seq, shell=True).split()
+    colormap = makeSimpleColormap(seq, ss)
+    name = 'variant_%d.eps'%variant_info.name
+    colormapStyle = '"-1:#e50000,0:#FFFFFF,1:#0343df"'
+    commandString = ('java -cp %s fr.orsay.lri.varna.applications.VARNAcmd '
+                             '-sequenceDBN "%s" -structureDBN "%s" -o %s -colorMap "%s" '
+                             '-colorMapStyle %s -spaceBetweenBases "0.6" '
+                             '-drawBases False  -periodNum 100 -bp "-#929591" -bpStyle lw'
+                             )%(varnaScript, seq, ss, name,
+                                                        ';'.join(colormap.astype(str)),
+                                                        colormapStyle)
+    print commandString
+    subprocess.call(commandString, shell=True)
