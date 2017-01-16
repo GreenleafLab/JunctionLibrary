@@ -276,14 +276,15 @@ def makeSimpleColormap(sequence, ss):
     colormap[receptorEnd-receptorLength2:receptorEnd] = -1
     return colormap
 
-def makeSimpleSsDiagram(variant_info):
+def makeSimpleSsDiagram(variant_info, name=None):
     varnaScript = '~/VARNAv3-92.jar'
     seq = variant_info.sequence.replace('T', 'U')
     ss  = variant_info.ss
-    if np.isnan(ss):
+    if variant_info.isnull().ss:
         seq, ss, energy = subprocess.check_output("echo %s | RNAfold"%seq, shell=True).split()
     colormap = makeSimpleColormap(seq, ss)
-    name = 'variant_%d.eps'%variant_info.name
+    if name is None:
+        name = 'variant_%d.eps'%variant_info.name
     colormapStyle = '"-1:#e50000,0:#FFFFFF,1:#0343df"'
     commandString = ('java -cp %s fr.orsay.lri.varna.applications.VARNAcmd '
                              '-sequenceDBN "%s" -structureDBN "%s" -o %s -colorMap "%s" '
