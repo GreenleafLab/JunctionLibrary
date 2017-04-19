@@ -11,6 +11,15 @@ import pandas as pd
 import nwalign as nw
 import itertools
 bases = ['A', 'C', 'G', 'U']
+
+def formatSeq(jseq):
+    """Given a junciton seq as a string with side1 and side2 delimited with _, make into a series."""
+    return pd.Series(jseq.split('_'), index=['side1', 'side2'])
+
+def formatSeqDf(jseq_series):
+    """Given a junciton seq as a string with side1 and side2 delimited with _, make into a series."""
+    return '_'.join(jseq_series)
+
 def make_mutation(base):
     if base == 'T': base = 'U'
     bases = ['G', 'C', 'U', 'A']
@@ -20,7 +29,20 @@ def make_mutation(base):
 def complement(base):
     seqDict = {'A':'U', 'G':'C', 'C':'G', 'U':'A'}
     return seqDict[base]
-    
+
+def singleslist(sequenceList, includeNoMut=False):
+    """Return mutations assuming that you only one want in the whole list."""
+    mutSeqs = singles(''.join(sequenceList), includeNoMut=includeNoMut)
+    newList = []
+    for s in mutSeqs:
+        newEntry = []
+        startSeq = s
+        for oldSeq in sequenceList:
+            newEntry.append(startSeq[:len(oldSeq)])
+            startSeq = startSeq[len(oldSeq):]
+        newList.append(newEntry)
+    return newList
+
 def singlesDF(sequenceDF, return_dict=False):
     sides = ['side1', 'side2']
     combinatorics1 = pd.DataFrame(columns=sides)
@@ -57,9 +79,12 @@ def get_insertions(sequence, return_dict=False):
     else:
         return new_sequences.values()
 
-def singles(sequence, return_dict=False):
+def singles(sequence, return_dict=False, includeNoMut=True):
     total_number_bases = len(sequence)
-    new_sequences = {'':sequence}
+    if includeNoMut:
+        new_sequences = {'':sequence}
+    else:
+        new_sequences = {}
     for i, base in enumerate(sequence):
         other_bases = make_mutation(base)
         for new_base in other_bases:
@@ -69,6 +94,9 @@ def singles(sequence, return_dict=False):
         return pd.Series(new_sequences)
     else:
         return new_sequences.values()
+    
+def doubles(sequence, return_dict=False):
+    return list(np.unique(np.hstack([singles(s) for s in singles(sequence)])))
 
 def singleStep(vecStart, vecEnd):
     vecSteps = []
@@ -81,18 +109,31 @@ def singleStep(vecStart, vecEnd):
         else:
             pathFinished = False
     return vecSteps
+
+def alignMotifs(junctionSeqStart, junctionSeqEnd):
+    """Align the sequence of two motifs."""
+    for side in ['side1', 'side2']:
+        if len(junctionSeqStart.loc[side]) != len(junctionSeqEnd.loc[side]):
+            s1 = junctionSeqStart.loc[side]
+            s2 = junctionSeqEnd.loc[side]
+            a, b = nw.global_align(s1, s2, gap_open=-10)
+            #print side, a, b
+            junctionSeqStart.loc[side] = a.replace('-', '_')
+            junctionSeqEnd.loc[side] = b.replace('-', '_')
+    return junctionSeqStart, junctionSeqEnd
+
+def findDistance(junctionSeqStart, junctionSeqEnd):
+    """Find the number of substitutions that must occur between two motifs."""
+    junctionSeqStart, junctionSeqEnd = alignMotifs(junctionSeqStart, junctionSeqEnd)
+    vecInit = junctionSeqStart.loc['side1'] + junctionSeqStart.loc['side2']
+    vecEnd = junctionSeqEnd.loc['side1'] + junctionSeqEnd.loc['side2']
+    return np.sum([1 for s1, s2 in zip(vecInit, vecEnd) if s1!=s2])
+
        
 def getPathsFromFormatted(junctionSeqStart, junctionSeqEnd):
     
     # if length of either side is different, align them
-    for side in ['side1', 'side2']:
-        if len(junctionSeqStart.loc[side]) != len(junctionSeqEnd.loc[side]):
-            a, b = nw.global_align(junctionSeqStart.loc[side], junctionSeqEnd.loc[side], gap_open=-10)
-            print side, a, b
-            junctionSeqStart.loc[side] = a.replace('-', '_')
-            junctionSeqEnd.loc[side] = b.replace('-', '_')
-         
-    
+    junctionSeqStart, junctionSeqEnd = alignMotifs(junctionSeqStart, junctionSeqEnd)
     vecInit = junctionSeqStart.loc['side1'] + junctionSeqStart.loc['side2']
     vecEnd = junctionSeqEnd.loc['side1'] + junctionSeqEnd.loc['side2']
     numSteps = max(len(vecInit), len(vecEnd))
