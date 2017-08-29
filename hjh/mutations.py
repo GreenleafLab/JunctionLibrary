@@ -20,9 +20,14 @@ def formatSeqDf(jseq_series):
     """Given a junciton seq as a string with side1 and side2 delimited with _, make into a series."""
     return '_'.join(jseq_series)
 
-def make_mutation(base):
-    if base == 'T': base = 'U'
-    bases = ['G', 'C', 'U', 'A']
+def make_mutation(base, rna=True):
+    """Mutate a base to all of the other three bases."""
+    if rna:
+        if base == 'T': base = 'U'
+        bases = ['G', 'C', 'U', 'A']
+    else:
+        if base == 'U': base = 'T'
+        bases = ['G', 'C', 'T', 'A']
     bases.remove(base)
     return bases
 
@@ -79,14 +84,14 @@ def get_insertions(sequence, return_dict=False):
     else:
         return new_sequences.values()
 
-def singles(sequence, return_dict=False, includeNoMut=True):
+def singles(sequence, return_dict=False, includeNoMut=True, rna=True):
     total_number_bases = len(sequence)
     if includeNoMut:
         new_sequences = {'':sequence}
     else:
         new_sequences = {}
     for i, base in enumerate(sequence):
-        other_bases = make_mutation(base)
+        other_bases = make_mutation(base, rna=rna)
         for new_base in other_bases:
             new_seq = sequence[:i] + new_base + sequence[i+1:]
             new_sequences[(new_base, i)] = new_seq
