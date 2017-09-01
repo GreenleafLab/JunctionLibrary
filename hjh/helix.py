@@ -44,6 +44,8 @@ class Helix(object):
     
     def convertOffsetToHelixOneLength(self, effectiveLength, offset):
         return int(np.floor(effectiveLength/2.) + offset)
+    
+    
         
     def formatHelix(self, sequence, totalLength, lengthOneHelix):
         helixAll = pd.DataFrame('',columns=['side1', 'side2'], index=['before', 'after'])
@@ -87,7 +89,7 @@ class Helix(object):
             helixAll['h2_side2'][i] = side2[:totalLengths[i]-lengthsOneHelix[i]]
 
         self.printHelixOneAndTwo(helixAll)
-        return helixAll
+        return pd.DataFrame(helixAll)
         
         
     def printHelixOneAndTwo(self, helixAll):
@@ -170,17 +172,7 @@ class Helix(object):
         # for standard helix length
         helixOneLength = range(helixLength+1)
         totalLengths = [helixLength]*len(helixOneLength)
-        
-        # for increase helix length by one
-        for i in range(1, helixLength+1):
-            helixOneLength.append(i)
-            totalLengths.append(helixLength+1)
-        
-        # for increase helix length by two
-        for i in range(1, helixLength+2):
-            helixOneLength.append(i)
-            totalLengths.append(helixLength+2)
-        
+                
         return self.formatHelices(totalLengths, helixOneLength)
     
     def doubleDouble(self):
