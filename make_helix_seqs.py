@@ -37,7 +37,7 @@ from hjh.tecto_assemble import TectoSeq
 
 #set up command line argument parser
 parser = argparse.ArgumentParser(description="script for making library")
-parser.add_argument('-c', '--helix_context', help='side1 of helix', default='')
+parser.add_argument('-c', '--helix_seqs', help='filename of helix contexts (side1 and side2)')
 parser.add_argument('-m', '--mode',help='mode in which to insert junctions. Can be '
                     '"along" = all possible locations in 8, 9, 10, 11 bp helices, or "standard" = one length in 8, 11, and three lengths in 9 and 10 bp',
                     default='standard')
