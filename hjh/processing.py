@@ -83,5 +83,21 @@ def return_threeway_helix_fields():
     'h1_side2', 'h2_side1', 'h2_side2']
 
 
-
-
+def check_ss_structure_set(seqs):
+    """Get the dotbracket ss structure of a set of sequences."""
+    seqs.seq.to_csv('temp.dat', sep='\t', header=False)
+    s = subprocess.check_output('cat temp.dat | awk  -F "\\t" \'{print ">"$1"\\n"$2}\' | RNAfold --noPS', shell=True).strip().split('\n')
+    ss_all = {}
+    for idx_almost, ss_almost in zip(s[::3], s[2::3]):
+        if idx_almost[0]!= '>':
+            print "error: every third entry is not the fasta header. "
+            sys.exit()
+        idx = idx_almost[1:]
+        try:
+            idx = int(idx)
+        except ValueError:
+            pass
+        ss = ss_almost.split()[0]
+        ss_all[idx] = ss
+    return pd.Series(ss_all).loc[seqs.index]
+        
