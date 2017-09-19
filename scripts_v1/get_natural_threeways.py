@@ -8,6 +8,7 @@ import rnamake.motif_tree
 import rnamake.cluster
 import rnamake.motif
 
+from hjh import processing
 
 mlib = sqlite_library.MotifSqliteLibrary("nway")
 mlib.load_all()
@@ -31,5 +32,17 @@ for name, group in junction_seqs.groupby('tw_name'):
     junction_seqs_red[idx] = group.loc[idx]
 junction_seqs_red = pd.concat(junction_seqs_red).unstack()
 
-junction_seqs_red.to_csv('~/JunctionLibrary/seq_params/three_way_junctions.dat', sep='\t', index=False)
+# make permutations
+junction_seqs_perm = {}
+for idx, row in junction_seqs_red.iterrows():
+	for perm in [0,1,2]:
+		seqs = processing.convert_junction_to_seq(row, perm)
+	
+		junction_seqs_perm[(idx, perm)] = pd.concat([
+			pd.Series(seqs, index=processing.return_junction_fields()),
+			pd.Series({'perm':perm, 'junction_seq':'_'.join(seqs)}),
+			row.drop(processing.return_junction_fields())])
+junction_seqs_perm = pd.concat(junction_seqs_perm).unstack()
+
+#junction_seqs_perm.to_csv('~/JunctionLibrary/seq_params/three_way_junctions.dat', sep='\t', index=False)
 	

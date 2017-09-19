@@ -31,7 +31,7 @@ for bulge_seq, (idx, helix_sub) in itertools.product(starting_bulge_seqs, flanki
 
 # do the same but for WT sequences also vary the top bp
 bulge_seq = ['UCU']
-flanking_bps_top = Junction(('W+', 'W+', 'W+')).sequences
+flanking_bps_top = Junction(('W', 'W', 'W+')).sequences
 for bulge_seq, (idx, helix_sub) in itertools.product([starting_bulge_seqs[0]], flanking_bps_top.iterrows()):
     tar_seqs.append(find_seq_and_data(bulge_seq, helix_sub))
     
