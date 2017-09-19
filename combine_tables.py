@@ -31,7 +31,9 @@ if __name__ == '__main__':
     # load
     new_seqs = pd.concat({'%s_%d'%(args.libname, i):processing.load_file(filename)
                           for i, filename in enumerate(args.add_seqs)}, names=['sublibrary', 'index'])
-    new_seqs.reset_index(level=0, inplace=True)
+    if not 'sublibrary' in new_seqs.columns.tolist():
+        # only add 'sublibrary' if it isn't already a columns
+        new_seqs.reset_index(level=0, inplace=True)
     
     # make unique if option given
     if args.unique:
@@ -42,5 +44,13 @@ if __name__ == '__main__':
     # save
     new_seqs.to_csv(args.out_file, sep='\t', index=False)
     
-
+    sys.exit()
     
+    seqs = a.loc[a.old_idx=='35311_A']
+    seqs.loc[:, 'ss'] = processing.check_ss_structure_set(seqs)
+    for name, group in seqs.groupby('sublibrary'):
+        for idx, seq in group.iloc[:10].iterrows():
+            tecto_assemble.makeSimpleSsDiagram(seq.seq, seq.ss,
+                                               filename='variant_%d.%s.receptor_%s.eps'%(idx, seq.sublibrary, seq.r_name),
+                                               receptorLengths=[len(s) for s in seq.r_seq.split('_')])
+        
