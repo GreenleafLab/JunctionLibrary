@@ -254,7 +254,7 @@ def find_all(a_str, sub):
         yield start
         start += len(sub) # use start += 1 to find overlapping matches
 
-def makeSimpleColormap(sequence, ss):
+def makeSimpleColormap(sequence, ss, receptorLengths=[5, 6], baseLength=6):
     colormap = np.zeros(len(sequence))
 
     loopStarts = list(find_all(ss, '(....)')) 
@@ -267,30 +267,24 @@ def makeSimpleColormap(sequence, ss):
             else:
                 colormap[ind] = 1
     
-    receptorStart = 6
-    receptorLength1 = 5
-    colormap[receptorStart:receptorStart+receptorLength1] = -1
-    
-    receptorEnd = -6
-    receptorLength2 = 6
-    colormap[receptorEnd-receptorLength2:receptorEnd] = -1
+    colormap[baseLength:baseLength+receptorLengths[0]] = -1
+    colormap[-baseLength-receptorLengths[1]:-baseLength] = -1
     return colormap
 
-def makeSimpleSsDiagram(variant_info, name=None):
+
+
+def makeSimpleSsDiagram(seq, ss, filename, receptorLengths=None):
     varnaScript = '~/VARNAv3-92.jar'
-    seq = variant_info.sequence.replace('T', 'U')
-    ss  = variant_info.ss
-    if variant_info.isnull().ss:
-        seq, ss, energy = subprocess.check_output("echo %s | RNAfold"%seq, shell=True).split()
-    colormap = makeSimpleColormap(seq, ss)
-    if name is None:
-        name = 'variant_%d.eps'%variant_info.name
+    seq = seq.replace('T', 'U')
+    colormap = makeSimpleColormap(seq, ss, receptorLengths)
+    
+
     colormapStyle = '"-1:#e50000,0:#FFFFFF,1:#0343df"'
     commandString = ('java -cp %s fr.orsay.lri.varna.applications.VARNAcmd '
                              '-sequenceDBN "%s" -structureDBN "%s" -o %s -colorMap "%s" '
                              '-colorMapStyle %s -spaceBetweenBases "0.6" '
                              '-drawBases False  -periodNum 100 -bp "-#929591" -bpStyle lw'
-                             )%(varnaScript, seq, ss, name,
+                             )%(varnaScript, seq, ss, filename,
                                                         ';'.join(colormap.astype(str)),
                                                         colormapStyle)
     print commandString
