@@ -42,7 +42,11 @@ if __name__ == '__main__':
         
     
     # save
-    new_seqs.to_csv(args.out_file, sep='\t', index=False)
+    ext_out = os.path.splitext(args.out_file)[-1]
+    if ext_out == '.csv':
+        new_seqs.to_csv(args.out_file, index=False)
+    else:
+        new_seqs.to_csv(args.out_file, sep='\t', index=False)
     
     sys.exit()
     

@@ -195,7 +195,7 @@ if __name__ == '__main__':
     filenames = {}
     for length in lengths:
         filenames[length] = os.path.join(saveDir, 'expt.length_%d.map'%length)  
-        print "%%run ~/JunctionLibrary/hjh/make_library.py -map %s -jun %s -jl 6 -out %s"%(filenames[length],
+        print "%%run ~/JunctionLibrary/make_library.py -map %s -jun %s -jl 6 -out %s"%(filenames[length],
                                                                                      os.path.join(saveDir, 'all.junctions_to_compare.junctions'),
                                                                                      os.path.join(saveDir, 'all.junctions_to_compare.length_%d'%length))
     
